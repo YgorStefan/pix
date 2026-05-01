@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS saque_pix_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON saque_pix_test.* TO 'root'@'%';
+FLUSH PRIVILEGES;
