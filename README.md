@@ -120,3 +120,52 @@ O case define a estrutura obrigatória do body mas não detalha respostas de err
 
 **Observabilidade via logs estruturados**
 Logs JSON estruturados em `runtime/logs/` para cada saque processado, falha de email e execução de cron. Não foi pedido explicitamente, mas o case menciona "observabilidade" como ponto de atenção.
+
+## Deploy no servidor (subdomínio)
+
+### Pré-requisitos no servidor
+
+```bash
+# Instalar Docker
+curl -fsSL https://get.docker.com | sh
+
+# Instalar Docker Compose plugin
+sudo apt install docker-compose-plugin
+```
+
+### Subir o projeto
+
+```bash
+git clone <url-do-repo> casepix
+cd casepix
+cp .env.example .env
+# Editar .env com as credenciais desejadas
+docker compose up -d --build
+```
+
+O projeto estará acessível na porta 80 do servidor.
+
+### Configurar subdomínio (Hostinger)
+
+1. Acesse o painel da Hostinger → Domínios → casepix.ygorstefan.com
+2. Aponte o subdomínio para o IP do servidor (registro A)
+3. Aguarde a propagação DNS (pode levar até 24h)
+
+### HTTPS (opcional mas recomendado)
+
+```bash
+sudo apt install certbot
+sudo certbot certonly --standalone -d casepix.ygorstefan.com
+
+# Atualizar nginx.conf para incluir SSL e redirecionar HTTP → HTTPS
+```
+
+Depois de obter o certificado, editar `docker/nginx/nginx.conf` para escutar na porta 443 com os certificados em `/etc/letsencrypt/live/casepix.ygorstefan.com/`.
+
+### Serviços disponíveis após deploy
+
+| Serviço    | URL                            |
+|------------|--------------------------------|
+| Dashboard  | http://casepix.ygorstefan.com  |
+| API        | http://casepix.ygorstefan.com/account |
+| Mailhog    | http://<ip-servidor>:8025    |
