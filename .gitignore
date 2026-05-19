@@ -1,4 +1,4 @@
-/docs
+/docs/guia-entrevista-tecnica.md
 /vendor/
 /runtime/
 .env
@@ -7,3 +7,4 @@
 Thumbs.db
 .DS_Store
 .phpunit.result.cache
+.superpowers
