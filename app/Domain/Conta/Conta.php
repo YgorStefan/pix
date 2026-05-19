@@ -41,4 +41,9 @@ class Conta
         }
         $this->saldo = $this->saldo->subtrair($valor);
     }
+
+    public function alterarSaldo(Dinheiro $novoSaldo): void
+    {
+        $this->saldo = $novoSaldo;
+    }
 }

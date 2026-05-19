@@ -40,4 +40,16 @@ class ContaTest extends TestCase
         $this->assertTrue($this->conta->temSaldoSuficiente(Dinheiro::deDecimal('200.00')));
         $this->assertFalse($this->conta->temSaldoSuficiente(Dinheiro::deDecimal('200.01')));
     }
+
+    public function testAlteraSaldoDiretamente(): void
+    {
+        $this->conta->alterarSaldo(Dinheiro::deDecimal('999.99'));
+        $this->assertSame('999.99', $this->conta->obterSaldo()->toDecimal());
+    }
+
+    public function testAlteraSaldoParaZero(): void
+    {
+        $this->conta->alterarSaldo(Dinheiro::deDecimal('0.00'));
+        $this->assertSame('0.00', $this->conta->obterSaldo()->toDecimal());
+    }
 }
