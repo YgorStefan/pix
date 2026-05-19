@@ -1,1 +1,428 @@
-ok
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CasePix</title>
+  <style>
+    :root {
+      --bg: #020617; --bg-alt: #0f172a; --bg-card: #1e293b;
+      --border: #334155; --border-dim: #1e293b;
+      --text: #94a3b8; --text-bright: #f1f5f9; --text-dim: #475569;
+      --green: #22c55e; --green-bg: #0a1f0f; --green-border: #166534;
+      --red: #ef4444; --red-bg: #1c0a0a;
+      --amber: #f59e0b; --amber-bg: #1c1203;
+      --blue: #60a5fa;
+      --font: 'Fira Code', 'Courier New', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; overflow: hidden; }
+    input, button, select { font-family: var(--font); font-size: 12px; }
+    a { color: var(--text-dim); text-decoration: none; }
+    a:hover { color: var(--text); }
+
+    #app { display: flex; height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    #sidebar { width: 260px; min-width: 260px; border-right: 1px solid var(--border-dim); display: flex; flex-direction: column; background: var(--bg); }
+    .sidebar-top { padding: 16px; border-bottom: 1px solid var(--border-dim); display: flex; justify-content: space-between; align-items: center; }
+    .logo { color: var(--green); font-weight: 700; font-size: 14px; letter-spacing: 1px; }
+    .sidebar-section-label { padding: 12px 16px 4px; font-size: 9px; letter-spacing: 2px; color: var(--text-dim); }
+    #lista-contas { flex: 1; overflow-y: auto; padding: 6px 8px; }
+    .conta-item { padding: 9px 11px; border: 1px solid var(--border-dim); border-radius: 4px; cursor: pointer; margin-bottom: 5px; transition: border-color 0.1s; }
+    .conta-item:hover { border-color: var(--border); }
+    .conta-item.ativa { border-color: var(--green); background: var(--green-bg); }
+    .conta-nome { color: var(--text); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conta-item.ativa .conta-nome { color: var(--green); }
+    .conta-saldo { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+    .empty-sidebar { padding: 16px; color: var(--text-dim); font-size: 11px; text-align: center; }
+    #form-nova-conta { margin: 6px 8px; border: 1px solid var(--green-border); border-radius: 4px; padding: 10px; background: var(--green-bg); display: none; }
+    #form-nova-conta input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 6px 8px; color: var(--text-bright); margin-bottom: 6px; outline: none; }
+    #form-nova-conta input:focus { border-color: var(--green); }
+    #form-nova-conta input::placeholder { color: var(--text-dim); }
+    .form-btns { display: flex; gap: 6px; }
+    .btn-criar { flex: 1; background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-weight: 700; font-size: 11px; }
+    .btn-criar:hover { opacity: 0.85; }
+    .btn-cancelar { flex: 1; background: transparent; color: var(--text-dim); border: 1px solid var(--border); border-radius: 3px; padding: 6px; cursor: pointer; font-size: 11px; }
+    .btn-cancelar:hover { color: var(--text); border-color: var(--border); }
+    .sidebar-footer { padding: 10px 8px; border-top: 1px solid var(--border-dim); }
+    .btn-nova-conta { width: 100%; border: 1px dashed var(--border); background: transparent; color: var(--text-dim); border-radius: 4px; padding: 8px; cursor: pointer; transition: all 0.1s; font-size: 12px; }
+    .btn-nova-conta:hover { border-color: var(--green); color: var(--green); }
+
+    /* ── MAIN ── */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 13px; }
+    #painel-conta { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+
+    /* conta header */
+    #conta-header { padding: 16px 20px; border-bottom: 1px solid var(--border-dim); display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
+    .conta-header-info h2 { color: var(--text-bright); font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+    .conta-header-saldo { color: var(--green); font-size: 13px; }
+    .conta-header-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-editar-saldo { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 4px 10px; cursor: pointer; font-size: 11px; }
+    .btn-editar-saldo:hover { border-color: var(--amber); color: var(--amber); }
+    .btn-excluir { background: transparent; border: 1px solid var(--border-dim); color: var(--text-dim); border-radius: 3px; padding: 4px 10px; cursor: pointer; font-size: 11px; }
+    .btn-excluir:hover { border-color: var(--red); color: var(--red); }
+    #edit-saldo-form { display: none; align-items: center; gap: 6px; }
+    #edit-saldo-form input { background: var(--bg-alt); border: 1px solid var(--amber); border-radius: 3px; padding: 4px 8px; color: var(--text-bright); width: 100px; outline: none; }
+    .btn-salvar-saldo { background: var(--amber); color: var(--bg); border: none; border-radius: 3px; padding: 4px 10px; cursor: pointer; font-size: 11px; font-weight: 700; }
+    .btn-salvar-saldo:hover { opacity: 0.85; }
+    .btn-cancelar-edit { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 11px; }
+
+    /* content area */
+    #content-area { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* saque form */
+    .secao-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 8px; }
+    #form-saque { background: var(--bg-alt); border: 1px solid var(--border-dim); border-radius: 6px; padding: 14px; }
+    .saque-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-end; }
+    .saque-row:last-child { margin-bottom: 0; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 9px; letter-spacing: 1px; color: var(--text-dim); }
+    .field input, .field select { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 6px 8px; color: var(--text-bright); outline: none; }
+    .field input:focus, .field select:focus { border-color: var(--green); }
+    .field input::placeholder { color: var(--text-dim); }
+    .field select option { background: var(--bg-alt); }
+    .field-valor { width: 120px; }
+    .field-tipo { width: 110px; }
+    .field-chave { flex: 1; }
+    .field-schedule { flex: 1; }
+    .btn-sacar { background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 7px 18px; cursor: pointer; font-weight: 700; font-size: 12px; white-space: nowrap; align-self: flex-end; }
+    .btn-sacar:hover { opacity: 0.85; }
+    .btn-sacar:disabled { opacity: 0.4; cursor: default; }
+    .schedule-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); font-size: 11px; user-select: none; }
+    .schedule-toggle input[type=checkbox] { accent-color: var(--green); width: 12px; height: 12px; }
+    #schedule-row { display: none; }
+
+    /* terminal */
+    #terminal-output { background: var(--bg); border: 1px solid var(--border-dim); border-radius: 6px; padding: 12px; font-size: 11px; line-height: 1.7; display: none; }
+    .terminal-line { display: flex; gap: 8px; }
+    .terminal-prompt { color: var(--text-dim); flex-shrink: 0; }
+    .terminal-method { color: var(--blue); }
+    .terminal-path { color: var(--text); }
+    .terminal-status-ok { color: var(--green); }
+    .terminal-status-err { color: var(--red); }
+    .terminal-json { color: var(--text); white-space: pre-wrap; word-break: break-all; padding-left: 20px; }
+    .terminal-cursor { display: inline-block; width: 8px; height: 13px; background: var(--green); animation: blink 1s step-end infinite; vertical-align: middle; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* histórico */
+    #historico { display: flex; flex-direction: column; gap: 4px; }
+    .saque-row-hist { background: var(--bg-alt); border: 1px solid var(--border-dim); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .saque-status { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; min-width: 90px; }
+    .status-ok { color: var(--green); }
+    .status-agendado { color: var(--amber); }
+    .status-erro { color: var(--red); }
+    .saque-info { color: var(--text); font-size: 11px; flex: 1; padding: 0 12px; }
+    .saque-meta { color: var(--text-dim); font-size: 10px; text-align: right; }
+    .empty-hist { color: var(--text-dim); font-size: 11px; padding: 8px 0; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-top">
+      <span class="logo">▶ CASEPIX</span>
+      <a href="https://ygorstefan.com" target="_blank">ygorstefan.com ↗</a>
+    </div>
+    <div class="sidebar-section-label">CONTAS</div>
+    <div id="lista-contas"><div class="empty-sidebar">Carregando...</div></div>
+    <div id="form-nova-conta">
+      <input id="inp-nome" type="text" placeholder="Nome da conta" maxlength="60">
+      <input id="inp-saldo" type="text" placeholder="Saldo inicial (ex: 500.00)">
+      <div class="form-btns">
+        <button class="btn-criar" onclick="submitNovaConta()">Criar</button>
+        <button class="btn-cancelar" onclick="fecharFormNovaConta()">Cancelar</button>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-nova-conta" onclick="abrirFormNovaConta()">+ Nova conta</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="empty-state">▶ Selecione uma conta ou crie uma nova.</div>
+    <div id="painel-conta">
+      <div id="conta-header">
+        <div class="conta-header-info">
+          <h2 id="hdr-nome"></h2>
+          <div class="conta-header-saldo">Saldo: R$ <span id="hdr-saldo"></span></div>
+        </div>
+        <div class="conta-header-actions">
+          <div id="edit-saldo-form">
+            <input id="inp-novo-saldo" type="text" placeholder="0.00" style="width:110px">
+            <button class="btn-salvar-saldo" onclick="salvarSaldo()">Salvar</button>
+            <button class="btn-cancelar-edit" onclick="fecharEditSaldo()">✕</button>
+          </div>
+          <button class="btn-editar-saldo" onclick="abrirEditSaldo()">Editar saldo</button>
+          <button class="btn-excluir" onclick="confirmarExcluir()">Excluir</button>
+        </div>
+      </div>
+      <div id="content-area">
+        <div>
+          <div class="secao-label">NOVO SAQUE</div>
+          <div id="form-saque">
+            <div class="saque-row">
+              <div class="field field-valor">
+                <label>VALOR (R$)</label>
+                <input id="inp-valor" type="text" placeholder="0.00">
+              </div>
+              <div class="field field-tipo">
+                <label>TIPO PIX</label>
+                <select id="sel-tipo" onchange="atualizarPlaceholderChave()">
+                  <option value="email">email</option>
+                  <option value="cpf">cpf</option>
+                  <option value="cnpj">cnpj</option>
+                  <option value="telefone">telefone</option>
+                  <option value="aleatoria">aleatória</option>
+                </select>
+              </div>
+              <div class="field field-chave">
+                <label>CHAVE PIX</label>
+                <input id="inp-chave" type="text" placeholder="usuario@email.com">
+              </div>
+              <button class="btn-sacar" onclick="executarSaque()">SACAR</button>
+            </div>
+            <div class="saque-row">
+              <label class="schedule-toggle">
+                <input type="checkbox" id="chk-schedule" onchange="toggleSchedule()">
+                Agendar para data específica
+              </label>
+            </div>
+            <div class="saque-row" id="schedule-row">
+              <div class="field field-schedule">
+                <label>DATA/HORA (America/Sao_Paulo)</label>
+                <input id="inp-schedule" type="text" placeholder="YYYY-MM-DD HH:mm">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="terminal-output"></div>
+        <div>
+          <div class="secao-label" id="lbl-historico" style="display:none">HISTÓRICO DE SAQUES</div>
+          <div id="historico"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const placeholders = {
+    email:    'usuario@email.com',
+    cpf:      '123.456.789-00 ou 12345678900',
+    cnpj:     '12.345.678/0001-90 ou 12345678000190',
+    telefone: '+5511999999999',
+    aleatoria:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  };
+
+  let contaAtualId = null;
+
+  function atualizarPlaceholderChave() {
+    const tipo = document.getElementById('sel-tipo').value;
+    document.getElementById('inp-chave').placeholder = placeholders[tipo] || '';
+  }
+
+  function toggleSchedule() {
+    const checked = document.getElementById('chk-schedule').checked;
+    document.getElementById('schedule-row').style.display = checked ? 'flex' : 'none';
+  }
+
+  async function api(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(path, opts);
+    let data = null;
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json') && res.status !== 204) {
+      data = await res.json();
+    }
+    return { status: res.status, data };
+  }
+
+  function mostrarTerminal(method, path, status, data) {
+    const el = document.getElementById('terminal-output');
+    el.style.display = 'block';
+    const statusClass = status >= 200 && status < 300 ? 'terminal-status-ok' : 'terminal-status-err';
+    el.innerHTML = `
+      <div class="terminal-line">
+        <span class="terminal-prompt">▶</span>
+        <span class="terminal-method">${method}</span>
+        <span class="terminal-path">${path}</span>
+      </div>
+      <div class="terminal-line">
+        <span class="terminal-prompt">◀</span>
+        <span class="${statusClass}">${status}</span>
+      </div>
+      ${data !== null ? `<div class="terminal-json">${JSON.stringify(data, null, 2)}</div>` : ''}
+    `;
+  }
+
+  function mostrarCarregando() {
+    const el = document.getElementById('terminal-output');
+    el.style.display = 'block';
+    el.innerHTML = `<div class="terminal-line"><span class="terminal-prompt">▶</span><span class="terminal-cursor"></span></div>`;
+  }
+
+  async function carregarContas() {
+    const { status, data } = await api('GET', '/account');
+    const lista = document.getElementById('lista-contas');
+    if (status !== 200 || !Array.isArray(data) || data.length === 0) {
+      lista.innerHTML = '<div class="empty-sidebar">Nenhuma conta. Use o botão abaixo.</div>';
+      return;
+    }
+    lista.innerHTML = data.map(c => `
+      <div class="conta-item${c.id === contaAtualId ? ' ativa' : ''}" onclick="selecionarConta('${c.id}')">
+        <div class="conta-nome">${esc(c.name)}</div>
+        <div class="conta-saldo">R$ ${c.balance}</div>
+      </div>
+    `).join('');
+  }
+
+  async function selecionarConta(id) {
+    contaAtualId = id;
+    await carregarContas();
+    const { status, data } = await api('GET', `/account/${id}`);
+    if (status !== 200) return;
+    document.getElementById('empty-state').style.display = 'none';
+    const painel = document.getElementById('painel-conta');
+    painel.style.display = 'flex';
+    document.getElementById('hdr-nome').textContent = data.name;
+    document.getElementById('hdr-saldo').textContent = data.balance;
+    document.getElementById('terminal-output').style.display = 'none';
+    await carregarHistorico(id);
+  }
+
+  async function carregarHistorico(id) {
+    document.getElementById('lbl-historico').style.display = 'block';
+    const { status, data } = await api('GET', `/account/${id}/withdrawals`);
+    const hist = document.getElementById('historico');
+    if (status !== 200 || !Array.isArray(data) || data.length === 0) {
+      hist.innerHTML = '<div class="empty-hist">Nenhum saque registrado.</div>';
+      return;
+    }
+    hist.innerHTML = data.map(s => {
+      let statusHtml, meta;
+      if (s.error)      { statusHtml = '<span class="saque-status status-erro">✗ ERRO</span>';      meta = s.error_reason || ''; }
+      else if (!s.done) { statusHtml = '<span class="saque-status status-agendado">⏳ AGENDADO</span>'; meta = s.scheduled_for || ''; }
+      else              { statusHtml = '<span class="saque-status status-ok">✓ CONCLUÍDO</span>';    meta = s.created_at || ''; }
+      const pix = s.pix ? `${s.pix.type}: ${s.pix.key}` : '';
+      return `
+        <div class="saque-row-hist">
+          ${statusHtml}
+          <div class="saque-info">R$ ${s.amount} → ${esc(pix)}</div>
+          <div class="saque-meta">${esc(meta)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function abrirFormNovaConta() {
+    document.getElementById('form-nova-conta').style.display = 'block';
+    document.querySelector('.btn-nova-conta').style.display = 'none';
+    document.getElementById('inp-nome').focus();
+  }
+
+  function fecharFormNovaConta() {
+    document.getElementById('form-nova-conta').style.display = 'none';
+    document.querySelector('.btn-nova-conta').style.display = 'block';
+    document.getElementById('inp-nome').value = '';
+    document.getElementById('inp-saldo').value = '';
+  }
+
+  async function submitNovaConta() {
+    const nome  = document.getElementById('inp-nome').value.trim();
+    const saldo = document.getElementById('inp-saldo').value.trim();
+    if (!nome || !saldo) return;
+    const { status, data } = await api('POST', '/account', { name: nome, balance: parseFloat(saldo) });
+    if (status === 201) {
+      fecharFormNovaConta();
+      await carregarContas();
+      selecionarConta(data.id);
+    } else {
+      alert(data?.erros?.join('\n') || 'Erro ao criar conta.');
+    }
+  }
+
+  function abrirEditSaldo() {
+    document.getElementById('edit-saldo-form').style.display = 'flex';
+    document.getElementById('inp-novo-saldo').value = document.getElementById('hdr-saldo').textContent;
+    document.getElementById('inp-novo-saldo').focus();
+  }
+
+  function fecharEditSaldo() {
+    document.getElementById('edit-saldo-form').style.display = 'none';
+  }
+
+  async function salvarSaldo() {
+    const novoSaldo = document.getElementById('inp-novo-saldo').value.trim();
+    const { status, data } = await api('PATCH', `/account/${contaAtualId}/balance`, { balance: parseFloat(novoSaldo) });
+    if (status === 200) {
+      document.getElementById('hdr-saldo').textContent = data.balance;
+      fecharEditSaldo();
+      await carregarContas();
+    } else {
+      alert(data?.erros?.join('\n') || 'Erro ao atualizar saldo.');
+    }
+  }
+
+  async function confirmarExcluir() {
+    if (!confirm(`Excluir a conta "${document.getElementById('hdr-nome').textContent}"? Esta ação não pode ser desfeita.`)) return;
+    const { status, data } = await api('DELETE', `/account/${contaAtualId}`);
+    if (status === 204) {
+      contaAtualId = null;
+      document.getElementById('painel-conta').style.display = 'none';
+      document.getElementById('empty-state').style.display = 'flex';
+      await carregarContas();
+    } else if (status === 409) {
+      mostrarTerminal('DELETE', `/account/${contaAtualId}`, 409, data);
+    } else {
+      alert('Erro ao excluir conta.');
+    }
+  }
+
+  async function executarSaque() {
+    const valor    = document.getElementById('inp-valor').value.trim();
+    const tipo     = document.getElementById('sel-tipo').value;
+    const chave    = document.getElementById('inp-chave').value.trim();
+    const agendado = document.getElementById('chk-schedule').checked;
+    const schedule = agendado ? document.getElementById('inp-schedule').value.trim() : null;
+
+    const body = {
+      method: 'PIX',
+      amount: parseFloat(valor),
+      pix:    { type: tipo, key: chave },
+    };
+    if (agendado) body.schedule = schedule;
+
+    const path = `/account/${contaAtualId}/balance/withdraw`;
+    mostrarCarregando();
+
+    const { status, data } = await api('POST', path, body);
+    mostrarTerminal('POST', path, status, data);
+
+    if (status === 201) {
+      const { data: c } = await api('GET', `/account/${contaAtualId}`);
+      if (c) document.getElementById('hdr-saldo').textContent = c.balance;
+      await carregarContas();
+      await carregarHistorico(contaAtualId);
+    }
+  }
+
+  function esc(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('inp-nome').addEventListener('keydown', e => { if (e.key === 'Enter') submitNovaConta(); });
+  document.getElementById('inp-novo-saldo').addEventListener('keydown', e => { if (e.key === 'Enter') salvarSaldo(); });
+
+  carregarContas();
+</script>
+</body>
+</html>
