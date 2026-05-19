@@ -93,6 +93,6 @@ class AgendarSaqueTest extends TestCase
 
         $this->expectException(\App\Domain\Saque\Exception\TipoPixInvalidoException::class);
         $futuro = (new DateTimeImmutable('+1 hour'))->format('Y-m-d H:i');
-        $this->useCase->executar('conta-1', 'telefone', '11999999999', '100.00', $futuro);
+        $this->useCase->executar('conta-1', 'bitcoin', '1A2B3C', '100.00', $futuro);
     }
 }

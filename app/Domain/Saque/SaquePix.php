@@ -7,7 +7,7 @@ use App\Domain\Saque\Exception\TipoPixInvalidoException;
 
 class SaquePix implements MetodoDeSaque
 {
-    private const TIPOS_VALIDOS = ['email'];
+    private const TIPOS_VALIDOS = ['email', 'cpf', 'cnpj', 'telefone', 'aleatoria'];
 
     public function __construct(
         private readonly string $tipo,

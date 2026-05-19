@@ -83,7 +83,7 @@ class ProcessarSaqueTest extends TestCase
         $this->saqueRepo->shouldNotReceive('salvar');
 
         $this->expectException(\App\Domain\Saque\Exception\TipoPixInvalidoException::class);
-        $this->useCase->executar('conta-1', 'telefone', '11999999999', '100.00');
+        $this->useCase->executar('conta-1', 'bitcoin', '1A2B3C', '100.00');
     }
 
     public function testValorZeroEProcessado(): void

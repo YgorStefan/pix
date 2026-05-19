@@ -82,11 +82,18 @@ class ContaController
         if (($body['method'] ?? '') !== 'PIX') {
             $erros[] = 'method deve ser "PIX"';
         }
-        if (!isset($body['pix']['type']) || $body['pix']['type'] !== 'email') {
-            $erros[] = 'pix.type deve ser "email"';
+        $tiposValidos = ['email', 'cpf', 'cnpj', 'telefone', 'aleatoria'];
+        $pixTipo = $body['pix']['type'] ?? null;
+        if (!in_array($pixTipo, $tiposValidos, true)) {
+            $erros[] = 'pix.type deve ser um de: ' . implode(', ', $tiposValidos);
         }
-        if (!isset($body['pix']['key']) || !filter_var($body['pix']['key'], FILTER_VALIDATE_EMAIL)) {
-            $erros[] = 'pix.key deve ser um email válido';
+        if (!isset($body['pix']['key'])) {
+            $erros[] = 'pix.key é obrigatório';
+        } elseif ($pixTipo !== null && in_array($pixTipo, $tiposValidos, true)) {
+            $erroChave = $this->validarChavePix($pixTipo, (string) $body['pix']['key']);
+            if ($erroChave !== null) {
+                $erros[] = $erroChave;
+            }
         }
         $amount = $body['amount'] ?? null;
         if ($amount === null
@@ -109,5 +116,22 @@ class ContaController
         }
 
         return $erros;
+    }
+
+    private function validarChavePix(string $tipo, string $chave): ?string
+    {
+        return match ($tipo) {
+            'email'    => filter_var($chave, FILTER_VALIDATE_EMAIL) ? null
+                          : 'pix.key deve ser um email válido (ex: usuario@email.com)',
+            'cpf'      => preg_match('/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/', $chave) ? null
+                          : 'pix.key CPF inválido. Use 000.000.000-00 ou 00000000000',
+            'cnpj'     => preg_match('/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/', $chave) ? null
+                          : 'pix.key CNPJ inválido. Use 00.000.000/0001-00 ou 00000000000000',
+            'telefone' => preg_match('/^\+55\d{10,11}$/', $chave) ? null
+                          : 'pix.key telefone inválido. Use +55XXXXXXXXXXX',
+            'aleatoria'=> preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $chave) ? null
+                          : 'pix.key chave aleatória deve ser UUID (ex: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)',
+            default    => null,
+        };
     }
 }
