@@ -7,7 +7,6 @@ use App\Domain\Conta\Conta;
 use App\Domain\Conta\ContaRepositorio;
 use App\Domain\Conta\Exception\ContaNaoEncontradaException;
 use App\Domain\Saque\Dinheiro;
-use Hyperf\DbConnection\Db;
 
 class ContaRepositorioMySQL implements ContaRepositorio
 {
@@ -29,11 +28,34 @@ class ContaRepositorioMySQL implements ContaRepositorio
         return $this->paraEntidade($model);
     }
 
+    public function criar(Conta $conta): void
+    {
+        ContaModel::create([
+            'id'      => $conta->id(),
+            'name'    => $conta->nome(),
+            'balance' => $conta->obterSaldo()->toDecimal(),
+        ]);
+    }
+
+    public function listar(): array
+    {
+        return ContaModel::query()
+            ->orderBy('name')
+            ->get()
+            ->map(fn(ContaModel $m) => $this->paraEntidade($m))
+            ->all();
+    }
+
     public function salvar(Conta $conta): void
     {
         ContaModel::query()->where('id', $conta->id())->update([
             'balance' => $conta->obterSaldo()->toDecimal(),
         ]);
+    }
+
+    public function excluir(string $id): void
+    {
+        ContaModel::query()->where('id', $id)->delete();
     }
 
     private function paraEntidade(ContaModel $model): Conta
