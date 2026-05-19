@@ -85,6 +85,43 @@ class SaqueRepositorioMySQL implements SaqueRepositorio
         ]);
     }
 
+    public function listarPorConta(string $contaId): array
+    {
+        return SaqueModel::query()
+            ->where('account_id', $contaId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function (SaqueModel $m) {
+                $pix = SaquePixModel::find($m->id);
+                $scheduledFor = $m->scheduled_for !== null
+                    ? (new DateTimeImmutable($m->scheduled_for, new DateTimeZone('UTC')))
+                        ->setTimezone(new DateTimeZone('America/Sao_Paulo'))
+                        ->format('Y-m-d H:i:s')
+                    : null;
+                $createdAt = (new DateTimeImmutable($m->created_at, new DateTimeZone('UTC')))
+                    ->setTimezone(new DateTimeZone('America/Sao_Paulo'))
+                    ->format('Y-m-d H:i:s');
+                return [
+                    'id'           => $m->id,
+                    'amount'       => number_format((float) $m->amount, 2, '.', ''),
+                    'method'       => $m->method,
+                    'pix'          => $pix ? ['type' => $pix->type, 'key' => $pix->key] : null,
+                    'scheduled'    => (bool) $m->scheduled,
+                    'scheduled_for'=> $scheduledFor,
+                    'done'         => (bool) $m->done,
+                    'error'        => (bool) $m->error,
+                    'error_reason' => $m->error_reason,
+                    'created_at'   => $createdAt,
+                ];
+            })
+            ->all();
+    }
+
+    public function contarPorConta(string $contaId): int
+    {
+        return SaqueModel::query()->where('account_id', $contaId)->count();
+    }
+
     private function paraEntidade(SaqueModel $model): Saque
     {
         $agendadoPara = $model->scheduled_for !== null

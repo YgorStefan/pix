@@ -15,4 +15,9 @@ interface SaqueRepositorio
     public function liberarReserva(string $saqueId): void;
 
     public function atualizarSaque(Saque $saque): void;
+
+    /** @return array[] array de arrays com dados do saque e PIX */
+    public function listarPorConta(string $contaId): array;
+
+    public function contarPorConta(string $contaId): int;
 }
