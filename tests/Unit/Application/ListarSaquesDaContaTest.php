@@ -44,8 +44,8 @@ class ListarSaquesDaContaTest extends TestCase
     public function testRetornaListaVaziaSeNaoHaSaques(): void
     {
         $conta = new Conta('id-1', 'Ygor', Dinheiro::deDecimal('500.00'));
-        $this->contaRepo->expects('buscarPorId')->andReturn($conta);
-        $this->saqueRepo->expects('listarPorConta')->andReturn([]);
+        $this->contaRepo->expects('buscarPorId')->with('id-1')->andReturn($conta);
+        $this->saqueRepo->expects('listarPorConta')->with('id-1')->andReturn([]);
         $this->assertSame([], $this->useCase->executar('id-1'));
     }
 
