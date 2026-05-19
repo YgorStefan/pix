@@ -25,6 +25,8 @@ Browser do avaliador
          MySQL + Mailhog
 ```
 
+CORS não é necessário — o proxy nginx garante que frontend e API estejam no mesmo origin.
+
 ### Arquivos adicionados / modificados
 
 | Status | Arquivo | Descrição |
@@ -48,19 +50,38 @@ Sem seed data fixo — o CRUD permite criar contas pela própria UI.
 |--------|------|-----------|
 | `POST` | `/account/{id}/balance/withdraw` | Saque imediato ou agendado |
 
+> **Nota:** a rota existente usa `{contaId}` como path param no `routes.php`. Será renomeado para `{id}` para padronizar com os novos endpoints.
+
 ### Novos
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `POST` | `/account` | Criar conta (`name`, `balance`) |
 | `GET` | `/account` | Listar todas as contas |
+| `GET` | `/account/{id}` | Detalhes de uma conta |
 | `PATCH` | `/account/{id}/balance` | Atualizar saldo (`balance`) |
 | `DELETE` | `/account/{id}` | Excluir conta |
 | `GET` | `/account/{id}/withdrawals` | Listar saques da conta |
 
+### Respostas de sucesso
+
+| Endpoint | Status | Body |
+|----------|--------|------|
+| `POST /account` | `201` | `{ id, name, balance }` |
+| `GET /account` | `200` | `[{ id, name, balance }, ...]` |
+| `GET /account/{id}` | `200` | `{ id, name, balance }` |
+| `PATCH /account/{id}/balance` | `200` | `{ id, name, balance }` |
+| `DELETE /account/{id}` | `204` | (sem body) |
+| `GET /account/{id}/withdrawals` | `200` | `[{ id, amount, method, pix, scheduled, scheduled_for, done, error, error_reason, created_at }, ...]` |
+
+Valores monetários (`balance`, `amount`) são strings decimais com 2 casas (ex: `"500.00"`).
+
+Datas (`scheduled_for`, `created_at`) são retornadas em `America/Sao_Paulo` no formato `Y-m-d H:i:s`.
+
 ### Respostas de erro padrão
 
 - `404` — conta não encontrada
+- `409` — conta não pode ser excluída (possui saques registrados)
 - `422` — dados inválidos (com lista de erros)
 - `500` — erro interno
 
@@ -102,17 +123,20 @@ Sem seed data fixo — o CRUD permite criar contas pela própria UI.
 ### Comportamento da sidebar
 
 - Lista todas as contas via `GET /account` ao carregar
-- Clique em uma conta → carrega detalhes + histórico no painel
+- Clique em uma conta → carrega detalhes via `GET /account/{id}` + histórico no painel
 - Botão "+ Nova conta" → form inline na sidebar (nome + saldo)
 - Submit → `POST /account` → atualiza lista
+- **Estado vazio**: quando não há contas, exibe mensagem "Nenhuma conta criada. Use o botão abaixo para começar." com o botão "+ Nova conta" destacado
 
 ### Comportamento do painel principal
 
 - **Editar saldo**: abre input inline, submit → `PATCH /account/{id}/balance`
-- **Excluir**: confirmação inline → `DELETE /account/{id}` → remove da sidebar
-- **Novo saque**: submit → `POST /account/{id}/balance/withdraw` → exibe resposta JSON no output terminal e recarrega saldo + histórico
+- **Excluir**: confirmação inline → `DELETE /account/{id}` → remove da sidebar. Se retornar `409`, exibe mensagem no terminal output
+- **Novo saque**: submit → `POST /account/{id}/balance/withdraw` → exibe resposta JSON no output terminal e recarrega saldo via `GET /account/{id}` + histórico
 - **Output terminal**: mostra método, rota, status code e JSON formatado. Cor verde para 2xx, vermelho para 4xx/5xx
 - **Histórico**: carrega via `GET /account/{id}/withdrawals` ao selecionar conta. Status coloridos: verde (concluído), amarelo (agendado), vermelho (erro)
+- **Estado vazio**: quando uma conta não tem saques, exibe "Nenhum saque registrado."
+- **Loading**: indicador de loading no terminal output enquanto aguarda resposta da API (cursor piscando `_`)
 
 ---
 
@@ -124,20 +148,26 @@ O domínio `Conta` já existe. Os novos casos de uso são simples — sem regras
 
 | Componente | Tipo | Descrição |
 |-----------|------|-----------|
-| `CriarConta` | Application service | Cria `Conta` com UUID gerado e persiste |
+| `CriarConta` | Application service | Gera UUID via `Ramsey\Uuid`, cria `Conta` e persiste |
+| `ObterConta` | Application service | Retorna uma conta por ID |
 | `ListarContas` | Application service | Retorna todas as contas do repositório |
-| `AtualizarSaldo` | Application service | Atualiza saldo de uma conta existente |
-| `ExcluirConta` | Application service | Remove conta se existir |
+| `AtualizarSaldo` | Application service | Define novo saldo de uma conta existente |
+| `ExcluirConta` | Application service | Remove conta se não houver saques vinculados (senão lança exceção) |
 | `ListarSaquesDaConta` | Application service | Retorna saques de uma conta com status |
+
+### Alterações no domínio
+
+- `Conta`: adicionar método `alterarSaldo(Dinheiro $novoSaldo): void` — atualização direta, sem validação de suficiência (diferente de `deduzirSaldo` que valida). Validação `saldo ≥ 0` fica no application service.
 
 ### Repositórios
 
-- `ContaRepositorio`: adicionar `listar(): array` e `excluir(string $id): void`
-- `SaqueRepositorio`: adicionar `listarPorConta(string $contaId): array`
+- `ContaRepositorio`: adicionar `criar(Conta $conta): void`, `listar(): array`, e `excluir(string $id): void`
+- `SaqueRepositorio`: adicionar `listarPorConta(string $contaId): array` e `contarPorConta(string $contaId): int`
 
 ### Controller
 
 - Expandir `app/Infrastructure/Http/ContaController.php` existente com as rotas CRUD
+- Rotas registradas via **annotations Hyperf** (`#[GetMapping]`, `#[PostMapping]`, `#[PatchMapping]`, `#[DeleteMapping]`) — mesmo padrão já usado pelo endpoint de saque
 - Validações: nome não vazio, saldo ≥ 0, UUID válido
 
 ---
@@ -150,9 +180,10 @@ O domínio `Conta` já existe. Os novos casos de uso são simples — sem regras
 server {
     listen 80;
 
-    location /account {
+    location ~ ^/account {
         proxy_pass http://app:9501;
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 
     location / {
@@ -161,6 +192,8 @@ server {
     }
 }
 ```
+
+> **Nota:** usa `location ~ ^/account` (regex) para garantir que todas as sub-rotas (`/account`, `/account/123`, `/account/123/withdrawals`) sejam capturadas corretamente.
 
 ### docker-compose.yml — serviço nginx
 
@@ -187,10 +220,29 @@ nginx:
 
 ---
 
+## Tipos de chave PIX suportados
+
+Expandido para suportar todos os tipos definidos pelo Banco Central:
+
+| Tipo | Formato esperado | Validação |
+|------|-----------------|-----------|
+| `email` | `usuario@dominio.com` | `FILTER_VALIDATE_EMAIL` |
+| `cpf` | `000.000.000-00` ou `00000000000` | 11 dígitos numéricos |
+| `cnpj` | `00.000.000/0000-00` ou `00000000000000` | 14 dígitos numéricos |
+| `telefone` | `+5511999999999` | `+55` + 10 ou 11 dígitos |
+| `aleatoria` | UUID (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`) | regex UUID v4 |
+
+### Alterações necessárias
+
+- `SaquePix::TIPOS_VALIDOS`: adicionar `cpf`, `cnpj`, `telefone`, `aleatoria`
+- `ContaController::validar()`: substituir validação fixa de `email` por dispatcher por tipo
+- Frontend: campo de chave PIX exibe placeholder/hint conforme tipo selecionado
+
+---
+
 ## Fora do escopo
 
 - Autenticação ou controle de acesso
-- Outros tipos de chave PIX além de `email` (definido pelo case original)
 - Transferências entre contas
 - Configuração de DNS no painel da Hostinger (feito manualmente)
 - HTTPS/SSL (opcional, documentado mas não implementado)
