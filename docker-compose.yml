@@ -1,18 +1,16 @@
 services:
-  app:
+  api:
     build: .
     ports:
       - "9501:9501"
     env_file:
       - .env
     depends_on:
-      mysql:
+      banco:
         condition: service_healthy
-      mailhog:
-        condition: service_started
     restart: unless-stopped
 
-  mysql:
+  banco:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -20,7 +18,7 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - dados_banco:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
@@ -28,34 +26,16 @@ services:
       timeout: 5s
       retries: 20
 
-  phpmyadmin:
-    image: phpmyadmin:latest
-    ports:
-      - "8080:80"
-    environment:
-      PMA_HOST: mysql
-      PMA_USER: app
-      PMA_PASSWORD: secret
-    depends_on:
-      mysql:
-        condition: service_healthy
-
-  mailhog:
-    image: mailhog/mailhog:latest
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-
-  nginx:
+  web:
     build: ./docker/nginx
     ports:
       - "80:80"
     volumes:
       - ./public:/usr/share/nginx/html:ro
     depends_on:
-      app:
+      api:
         condition: service_started
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  dados_banco:
