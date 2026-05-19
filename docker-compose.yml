@@ -46,5 +46,16 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  nginx:
+    build: ./docker/nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   mysql_data:
