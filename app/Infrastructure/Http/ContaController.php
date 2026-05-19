@@ -57,7 +57,7 @@ class ContaController
         ], $contas));
     }
 
-    #[GetMapping(path: '/{id}')]
+    #[GetMapping(path: '{id}')]
     public function obter(string $id, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
         try {
@@ -72,7 +72,7 @@ class ContaController
         }
     }
 
-    #[PatchMapping(path: '/{id}/balance')]
+    #[PatchMapping(path: '{id}/balance')]
     public function atualizarSaldo(string $id, RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
         $body = $request->getParsedBody();
@@ -95,7 +95,7 @@ class ContaController
         }
     }
 
-    #[DeleteMapping(path: '/{id}')]
+    #[DeleteMapping(path: '{id}')]
     public function excluir(string $id, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
         try {
@@ -110,7 +110,7 @@ class ContaController
         }
     }
 
-    #[GetMapping(path: '/{id}/withdrawals')]
+    #[GetMapping(path: '{id}/withdrawals')]
     public function listarSaques(string $id, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
         try {
@@ -120,7 +120,7 @@ class ContaController
         }
     }
 
-    #[PostMapping(path: '/{id}/balance/withdraw')]
+    #[PostMapping(path: '{id}/balance/withdraw')]
     public function sacar(string $id, RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
         $body = $request->getParsedBody();
