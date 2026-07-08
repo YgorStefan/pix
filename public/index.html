@@ -17,78 +17,61 @@
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
-    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; overflow: hidden; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; }
     input, button, select { font-family: var(--font); font-size: 12px; }
     a { color: var(--text-dim); text-decoration: none; }
     a:hover { color: var(--text); }
+    .hidden { display: none !important; }
 
-    #app { display: flex; height: 100vh; }
-
-    /* ── SIDEBAR ── */
-    #sidebar { width: 260px; min-width: 260px; border-right: 1px solid var(--border-dim); display: flex; flex-direction: column; background: var(--bg); }
-    .sidebar-top { padding: 16px; border-bottom: 1px solid var(--border-dim); display: flex; justify-content: space-between; align-items: center; }
+    /* ── TOPBAR ── */
+    #topbar { height: 52px; border-bottom: 1px solid var(--border-dim); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
     .logo { color: var(--green); font-weight: 700; font-size: 14px; letter-spacing: 1px; }
-    .sidebar-section-label { padding: 12px 16px 4px; font-size: 9px; letter-spacing: 2px; color: var(--text-dim); }
-    #lista-contas { flex: 1; overflow-y: auto; padding: 6px 8px; }
-    .conta-item { padding: 9px 11px; border: 1px solid var(--border-dim); border-radius: 4px; cursor: pointer; margin-bottom: 5px; transition: border-color 0.1s; }
-    .conta-item:hover { border-color: var(--border); }
-    .conta-item.ativa { border-color: var(--green); background: var(--green-bg); }
-    .conta-nome { color: var(--text); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .conta-item.ativa .conta-nome { color: var(--green); }
-    .conta-saldo { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
-    .empty-sidebar { padding: 16px; color: var(--text-dim); font-size: 11px; text-align: center; }
-    #form-nova-conta { margin: 6px 8px; border: 1px solid var(--green-border); border-radius: 4px; padding: 10px; background: var(--green-bg); display: none; }
-    #form-nova-conta input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 6px 8px; color: var(--text-bright); margin-bottom: 6px; outline: none; }
-    #form-nova-conta input:focus { border-color: var(--green); }
-    #form-nova-conta input::placeholder { color: var(--text-dim); }
-    .form-btns { display: flex; gap: 6px; }
-    .btn-criar { flex: 1; background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-weight: 700; font-size: 11px; }
-    .btn-criar:hover { opacity: 0.85; }
-    .btn-cancelar { flex: 1; background: transparent; color: var(--text-dim); border: 1px solid var(--border); border-radius: 3px; padding: 6px; cursor: pointer; font-size: 11px; }
-    .btn-cancelar:hover { color: var(--text); border-color: var(--border); }
-    .sidebar-footer { padding: 10px 8px; border-top: 1px solid var(--border-dim); }
-    .btn-nova-conta { width: 100%; border: 1px dashed var(--border); background: transparent; color: var(--text-dim); border-radius: 4px; padding: 8px; cursor: pointer; transition: all 0.1s; font-size: 12px; }
-    .btn-nova-conta:hover { border-color: var(--green); color: var(--green); }
+    #topbar-conta { display: flex; align-items: center; gap: 16px; }
+    #topbar-nome { color: var(--text); font-size: 12px; }
+    #topbar-nome strong { color: var(--text-bright); }
+    .btn-sair { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 11px; }
+    .btn-sair:hover { border-color: var(--red); color: var(--red); }
 
-    /* ── MAIN ── */
-    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    #empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 13px; }
-    #painel-conta { flex: 1; display: none; flex-direction: column; overflow: hidden; }
-
-    /* conta header */
-    #conta-header { padding: 16px 20px; border-bottom: 1px solid var(--border-dim); display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
-    .conta-header-info h2 { color: var(--text-bright); font-size: 16px; font-weight: 700; margin-bottom: 2px; }
-    .conta-header-saldo { color: var(--green); font-size: 13px; }
-    .conta-header-actions { display: flex; gap: 8px; align-items: center; }
-    .btn-editar-saldo { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 4px 10px; cursor: pointer; font-size: 11px; }
-    .btn-editar-saldo:hover { border-color: var(--amber); color: var(--amber); }
-    .btn-excluir { background: transparent; border: 1px solid var(--border-dim); color: var(--text-dim); border-radius: 3px; padding: 4px 10px; cursor: pointer; font-size: 11px; }
-    .btn-excluir:hover { border-color: var(--red); color: var(--red); }
-    #edit-saldo-form { display: none; align-items: center; gap: 6px; }
-    #edit-saldo-form input { background: var(--bg-alt); border: 1px solid var(--amber); border-radius: 3px; padding: 4px 8px; color: var(--text-bright); width: 100px; outline: none; }
-    .btn-salvar-saldo { background: var(--amber); color: var(--bg); border: none; border-radius: 3px; padding: 4px 10px; cursor: pointer; font-size: 11px; font-weight: 700; }
-    .btn-salvar-saldo:hover { opacity: 0.85; }
-    .btn-cancelar-edit { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 11px; }
-
-    /* content area */
-    #content-area { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
-
-    /* saque form */
-    .secao-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 8px; }
-    #form-saque { background: var(--bg-alt); border: 1px solid var(--border-dim); border-radius: 6px; padding: 14px; }
-    .saque-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-end; }
-    .saque-row:last-child { margin-bottom: 0; }
+    /* ── AUTH SCREEN ── */
+    #tela-auth { min-height: calc(100vh - 53px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #card-auth { width: 100%; max-width: 380px; border: 1px solid var(--border-dim); border-radius: 6px; background: var(--bg-alt); overflow: hidden; }
+    .auth-tabs { display: flex; border-bottom: 1px solid var(--border-dim); }
+    .auth-tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: var(--text-dim); font-size: 11px; letter-spacing: 1.5px; border-bottom: 2px solid transparent; }
+    .auth-tab.ativa { color: var(--green); border-bottom-color: var(--green); }
+    .auth-body { padding: 20px; }
+    .auth-form { display: none; flex-direction: column; gap: 12px; }
+    .auth-form.ativa { display: flex; }
     .field { display: flex; flex-direction: column; gap: 4px; }
     .field label { font-size: 9px; letter-spacing: 1px; color: var(--text-dim); }
-    .field input, .field select { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 6px 8px; color: var(--text-bright); outline: none; }
+    .field input, .field select { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; color: var(--text-bright); outline: none; width: 100%; }
     .field input:focus, .field select:focus { border-color: var(--green); }
     .field input::placeholder { color: var(--text-dim); }
     .field select option { background: var(--bg-alt); }
+    .btn-auth { background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 10px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 4px; }
+    .btn-auth:hover { opacity: 0.85; }
+    .btn-auth:disabled { opacity: 0.4; cursor: default; }
+    .auth-erro { background: var(--red-bg); border: 1px solid var(--red); color: var(--red); border-radius: 3px; padding: 8px 10px; font-size: 11px; display: none; }
+    .auth-hint { text-align: center; color: var(--text-dim); font-size: 10px; margin-top: 10px; }
+    .auth-hint a { color: var(--green); }
+
+    /* ── MAIN ── */
+    #painel-conta { max-width: 880px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; }
+    #conta-header { display: flex; justify-content: space-between; align-items: center; }
+    .conta-header-info h2 { color: var(--text-bright); font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+    .conta-header-saldo { color: var(--green); font-size: 14px; }
+    .conta-header-email { color: var(--text-dim); font-size: 11px; }
+
+    .secao-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 8px; }
+
+    /* saque form */
+    #form-saque { background: var(--bg-alt); border: 1px solid var(--border-dim); border-radius: 6px; padding: 14px; }
+    .saque-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-end; flex-wrap: wrap; }
+    .saque-row:last-child { margin-bottom: 0; }
     .field-valor { width: 120px; }
     .field-tipo { width: 110px; }
-    .field-chave { flex: 1; }
-    .field-schedule { flex: 1; }
-    .btn-sacar { background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 7px 18px; cursor: pointer; font-weight: 700; font-size: 12px; white-space: nowrap; align-self: flex-end; }
+    .field-chave { flex: 1; min-width: 160px; }
+    .field-schedule { flex: 1; min-width: 160px; }
+    .btn-sacar { background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 8px 18px; cursor: pointer; font-weight: 700; font-size: 12px; white-space: nowrap; align-self: flex-end; }
     .btn-sacar:hover { opacity: 0.85; }
     .btn-sacar:disabled { opacity: 0.4; cursor: default; }
     .schedule-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); font-size: 11px; user-select: none; }
@@ -109,7 +92,7 @@
 
     /* histórico */
     #historico { display: flex; flex-direction: column; gap: 4px; }
-    .saque-row-hist { background: var(--bg-alt); border: 1px solid var(--border-dim); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .saque-row-hist { background: var(--bg-alt); border: 1px solid var(--border-dim); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
     .saque-status { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; min-width: 90px; }
     .status-ok { color: var(--green); }
     .status-agendado { color: var(--amber); }
@@ -118,6 +101,11 @@
     .saque-meta { color: var(--text-dim); font-size: 10px; text-align: right; }
     .empty-hist { color: var(--text-dim); font-size: 11px; padding: 8px 0; }
 
+    /* danger zone */
+    #danger-zone { border-top: 1px solid var(--border-dim); padding-top: 14px; display: flex; justify-content: flex-end; }
+    .btn-excluir-conta { background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 10px; text-decoration: underline; }
+    .btn-excluir-conta:hover { color: var(--red); }
+
     /* scrollbar */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
@@ -125,95 +113,123 @@
   </style>
 </head>
 <body>
-<div id="app">
-  <aside id="sidebar">
-    <div class="sidebar-top">
-      <span class="logo">▶ CASEPIX</span>
-      <a href="https://ygorstefan.com" target="_blank">ygorstefan.com ↗</a>
+  <div id="topbar">
+    <span class="logo">▶ CASEPIX</span>
+    <div id="topbar-conta" class="hidden">
+      <span id="topbar-nome"></span>
+      <button class="btn-sair" onclick="sair()">sair</button>
     </div>
-    <div class="sidebar-section-label">CONTAS</div>
-    <div id="lista-contas"><div class="empty-sidebar">Carregando...</div></div>
-    <div id="form-nova-conta">
-      <input id="inp-nome" type="text" placeholder="Nome da conta" maxlength="60">
-      <input id="inp-saldo" type="text" placeholder="Saldo inicial (ex: 500.00)">
-      <div class="form-btns">
-        <button class="btn-criar" onclick="submitNovaConta()">Criar</button>
-        <button class="btn-cancelar" onclick="fecharFormNovaConta()">Cancelar</button>
-      </div>
-    </div>
-    <div class="sidebar-footer">
-      <button class="btn-nova-conta" onclick="abrirFormNovaConta()">+ Nova conta</button>
-    </div>
-  </aside>
+    <a id="topbar-link" href="https://ygorstefan.com" target="_blank">ygorstefan.com ↗</a>
+  </div>
 
-  <main id="main">
-    <div id="empty-state">▶ Selecione uma conta ou crie uma nova.</div>
-    <div id="painel-conta">
-      <div id="conta-header">
-        <div class="conta-header-info">
-          <h2 id="hdr-nome"></h2>
-          <div class="conta-header-saldo">Saldo: R$ <span id="hdr-saldo"></span></div>
-        </div>
-        <div class="conta-header-actions">
-          <div id="edit-saldo-form">
-            <input id="inp-novo-saldo" type="text" placeholder="0.00" style="width:110px">
-            <button class="btn-salvar-saldo" onclick="salvarSaldo()">Salvar</button>
-            <button class="btn-cancelar-edit" onclick="fecharEditSaldo()">✕</button>
+  <div id="tela-auth">
+    <div id="card-auth">
+      <div class="auth-tabs">
+        <div class="auth-tab ativa" id="tab-login" onclick="mostrarAba('login')">ENTRAR</div>
+        <div class="auth-tab" id="tab-registro" onclick="mostrarAba('registro')">CRIAR CONTA</div>
+      </div>
+      <div class="auth-body">
+        <div class="auth-erro" id="auth-erro"></div>
+
+        <form class="auth-form ativa" id="form-login" onsubmit="return submitLogin(event)">
+          <div class="field">
+            <label>E-MAIL</label>
+            <input id="login-email" type="email" placeholder="voce@email.com" required autocomplete="username">
           </div>
-          <button class="btn-editar-saldo" onclick="abrirEditSaldo()">Editar saldo</button>
-          <button class="btn-excluir" onclick="confirmarExcluir()">Excluir</button>
+          <div class="field">
+            <label>SENHA</label>
+            <input id="login-senha" type="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <button class="btn-auth" type="submit" id="btn-login">ENTRAR</button>
+        </form>
+
+        <form class="auth-form" id="form-registro" onsubmit="return submitRegistro(event)">
+          <div class="field">
+            <label>NOME</label>
+            <input id="reg-nome" type="text" placeholder="Seu nome" maxlength="60" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label>E-MAIL</label>
+            <input id="reg-email" type="email" placeholder="voce@email.com" required autocomplete="username">
+          </div>
+          <div class="field">
+            <label>SENHA (mín. 6 caracteres)</label>
+            <input id="reg-senha" type="password" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <label>SALDO INICIAL (opcional)</label>
+            <input id="reg-saldo" type="text" placeholder="0.00">
+          </div>
+          <button class="btn-auth" type="submit" id="btn-registro">CRIAR CONTA</button>
+        </form>
+
+        <div class="auth-hint" id="auth-hint">Novo por aqui? <a href="#" onclick="mostrarAba('registro');return false;">Crie sua conta</a></div>
+      </div>
+    </div>
+  </div>
+
+  <main id="painel-conta" class="hidden">
+    <div id="conta-header">
+      <div class="conta-header-info">
+        <h2 id="hdr-nome"></h2>
+        <div class="conta-header-email" id="hdr-email"></div>
+        <div class="conta-header-saldo">Saldo: R$ <span id="hdr-saldo"></span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="secao-label">NOVO SAQUE</div>
+      <div id="form-saque">
+        <div class="saque-row">
+          <div class="field field-valor">
+            <label>VALOR (R$)</label>
+            <input id="inp-valor" type="text" placeholder="0.00">
+          </div>
+          <div class="field field-tipo">
+            <label>TIPO PIX</label>
+            <select id="sel-tipo" onchange="atualizarPlaceholderChave()">
+              <option value="email">email</option>
+              <option value="cpf">cpf</option>
+              <option value="cnpj">cnpj</option>
+              <option value="telefone">telefone</option>
+              <option value="aleatoria">aleatória</option>
+            </select>
+          </div>
+          <div class="field field-chave">
+            <label>CHAVE PIX</label>
+            <input id="inp-chave" type="text" placeholder="usuario@email.com">
+          </div>
+          <button class="btn-sacar" onclick="executarSaque()">SACAR</button>
+        </div>
+        <div class="saque-row">
+          <label class="schedule-toggle">
+            <input type="checkbox" id="chk-schedule" onchange="toggleSchedule()">
+            Agendar para data específica
+          </label>
+        </div>
+        <div class="saque-row" id="schedule-row">
+          <div class="field field-schedule">
+            <label>DATA/HORA (America/Sao_Paulo)</label>
+            <input id="inp-schedule" type="text" placeholder="YYYY-MM-DD HH:mm">
+          </div>
         </div>
       </div>
-      <div id="content-area">
-        <div>
-          <div class="secao-label">NOVO SAQUE</div>
-          <div id="form-saque">
-            <div class="saque-row">
-              <div class="field field-valor">
-                <label>VALOR (R$)</label>
-                <input id="inp-valor" type="text" placeholder="0.00">
-              </div>
-              <div class="field field-tipo">
-                <label>TIPO PIX</label>
-                <select id="sel-tipo" onchange="atualizarPlaceholderChave()">
-                  <option value="email">email</option>
-                  <option value="cpf">cpf</option>
-                  <option value="cnpj">cnpj</option>
-                  <option value="telefone">telefone</option>
-                  <option value="aleatoria">aleatória</option>
-                </select>
-              </div>
-              <div class="field field-chave">
-                <label>CHAVE PIX</label>
-                <input id="inp-chave" type="text" placeholder="usuario@email.com">
-              </div>
-              <button class="btn-sacar" onclick="executarSaque()">SACAR</button>
-            </div>
-            <div class="saque-row">
-              <label class="schedule-toggle">
-                <input type="checkbox" id="chk-schedule" onchange="toggleSchedule()">
-                Agendar para data específica
-              </label>
-            </div>
-            <div class="saque-row" id="schedule-row">
-              <div class="field field-schedule">
-                <label>DATA/HORA (America/Sao_Paulo)</label>
-                <input id="inp-schedule" type="text" placeholder="YYYY-MM-DD HH:mm">
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="terminal-output"></div>
-        <div>
-          <div class="secao-label" id="lbl-historico" style="display:none">HISTÓRICO DE SAQUES</div>
-          <div id="historico"></div>
-        </div>
-      </div>
+    </div>
+
+    <div id="terminal-output"></div>
+
+    <div>
+      <div class="secao-label">HISTÓRICO DE SAQUES</div>
+      <div id="historico"></div>
+    </div>
+
+    <div id="danger-zone">
+      <button class="btn-excluir-conta" onclick="confirmarExcluirConta()">Excluir minha conta</button>
     </div>
   </main>
-</div>
 
 <script>
+  const TOKEN_KEY = 'casepix_token';
   const placeholders = {
     email:    'usuario@email.com',
     cpf:      '123.456.789-00 ou 12345678900',
@@ -222,7 +238,128 @@
     aleatoria:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
   };
 
-  let contaAtualId = null;
+  function token() { return localStorage.getItem(TOKEN_KEY); }
+  function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+  function limparToken() { localStorage.removeItem(TOKEN_KEY); }
+
+  async function api(method, path, body) {
+    const headers = { 'Content-Type': 'application/json' };
+    const t = token();
+    if (t) headers['Authorization'] = `Bearer ${t}`;
+    const opts = { method, headers };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(path, opts);
+    let data = null;
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json') && res.status !== 204) {
+      data = await res.json();
+    }
+    return { status: res.status, data };
+  }
+
+  function esc(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ── AUTENTICAÇÃO ── */
+
+  function mostrarAba(aba) {
+    document.getElementById('tab-login').classList.toggle('ativa', aba === 'login');
+    document.getElementById('tab-registro').classList.toggle('ativa', aba === 'registro');
+    document.getElementById('form-login').classList.toggle('ativa', aba === 'login');
+    document.getElementById('form-registro').classList.toggle('ativa', aba === 'registro');
+    document.getElementById('auth-hint').textContent = '';
+    document.getElementById('auth-hint').innerHTML = aba === 'login'
+      ? 'Novo por aqui? <a href="#" onclick="mostrarAba(\'registro\');return false;">Crie sua conta</a>'
+      : 'Já tem conta? <a href="#" onclick="mostrarAba(\'login\');return false;">Entrar</a>';
+    esconderErroAuth();
+  }
+
+  function mostrarErroAuth(msg) {
+    const el = document.getElementById('auth-erro');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function esconderErroAuth() {
+    document.getElementById('auth-erro').style.display = 'none';
+  }
+
+  async function submitLogin(ev) {
+    ev.preventDefault();
+    esconderErroAuth();
+    const email = document.getElementById('login-email').value.trim();
+    const senha = document.getElementById('login-senha').value;
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    try {
+      const { status, data } = await api('POST', '/auth/login', { email, password: senha });
+      if (status === 200) {
+        setToken(data.token);
+        await entrarNoPainel();
+      } else {
+        mostrarErroAuth(data?.message || data?.erros?.join('\n') || 'Não foi possível entrar.');
+      }
+    } finally {
+      btn.disabled = false;
+    }
+    return false;
+  }
+
+  async function submitRegistro(ev) {
+    ev.preventDefault();
+    esconderErroAuth();
+    const nome  = document.getElementById('reg-nome').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const senha = document.getElementById('reg-senha').value;
+    const saldo = document.getElementById('reg-saldo').value.trim();
+    const btn = document.getElementById('btn-registro');
+    btn.disabled = true;
+    try {
+      const body = { name: nome, email, password: senha };
+      if (saldo) body.balance = saldo;
+      const { status, data } = await api('POST', '/auth/register', body);
+      if (status === 201) {
+        setToken(data.token);
+        await entrarNoPainel();
+      } else {
+        mostrarErroAuth(data?.message || data?.erros?.join('\n') || 'Não foi possível criar a conta.');
+      }
+    } finally {
+      btn.disabled = false;
+    }
+    return false;
+  }
+
+  function sair() {
+    limparToken();
+    document.getElementById('painel-conta').classList.add('hidden');
+    document.getElementById('topbar-conta').classList.add('hidden');
+    document.getElementById('topbar-link').classList.remove('hidden');
+    document.getElementById('tela-auth').classList.remove('hidden');
+    document.getElementById('login-senha').value = '';
+    mostrarAba('login');
+  }
+
+  async function entrarNoPainel() {
+    const { status, data } = await api('GET', '/account/me');
+    if (status !== 200) {
+      limparToken();
+      return;
+    }
+    document.getElementById('tela-auth').classList.add('hidden');
+    document.getElementById('topbar-link').classList.add('hidden');
+    document.getElementById('topbar-conta').classList.remove('hidden');
+    document.getElementById('painel-conta').classList.remove('hidden');
+    document.getElementById('topbar-nome').innerHTML = `<strong>${esc(data.name)}</strong>`;
+    document.getElementById('hdr-nome').textContent = data.name;
+    document.getElementById('hdr-email').textContent = data.email;
+    document.getElementById('hdr-saldo').textContent = data.balance;
+    document.getElementById('terminal-output').style.display = 'none';
+    await carregarHistorico();
+  }
+
+  /* ── PAINEL ── */
 
   function atualizarPlaceholderChave() {
     const tipo = document.getElementById('sel-tipo').value;
@@ -232,18 +369,6 @@
   function toggleSchedule() {
     const checked = document.getElementById('chk-schedule').checked;
     document.getElementById('schedule-row').style.display = checked ? 'flex' : 'none';
-  }
-
-  async function api(method, path, body) {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
-    if (body !== undefined) opts.body = JSON.stringify(body);
-    const res = await fetch(path, opts);
-    let data = null;
-    const ct = res.headers.get('content-type') || '';
-    if (ct.includes('application/json') && res.status !== 204) {
-      data = await res.json();
-    }
-    return { status: res.status, data };
   }
 
   function mostrarTerminal(method, path, status, data) {
@@ -270,38 +395,8 @@
     el.innerHTML = `<div class="terminal-line"><span class="terminal-prompt">▶</span><span class="terminal-cursor"></span></div>`;
   }
 
-  async function carregarContas() {
-    const { status, data } = await api('GET', '/account');
-    const lista = document.getElementById('lista-contas');
-    if (status !== 200 || !Array.isArray(data) || data.length === 0) {
-      lista.innerHTML = '<div class="empty-sidebar">Nenhuma conta. Use o botão abaixo.</div>';
-      return;
-    }
-    lista.innerHTML = data.map(c => `
-      <div class="conta-item${c.id === contaAtualId ? ' ativa' : ''}" onclick="selecionarConta('${c.id}')">
-        <div class="conta-nome">${esc(c.name)}</div>
-        <div class="conta-saldo">R$ ${c.balance}</div>
-      </div>
-    `).join('');
-  }
-
-  async function selecionarConta(id) {
-    contaAtualId = id;
-    await carregarContas();
-    const { status, data } = await api('GET', `/account/${id}`);
-    if (status !== 200) return;
-    document.getElementById('empty-state').style.display = 'none';
-    const painel = document.getElementById('painel-conta');
-    painel.style.display = 'flex';
-    document.getElementById('hdr-nome').textContent = data.name;
-    document.getElementById('hdr-saldo').textContent = data.balance;
-    document.getElementById('terminal-output').style.display = 'none';
-    await carregarHistorico(id);
-  }
-
-  async function carregarHistorico(id) {
-    document.getElementById('lbl-historico').style.display = 'block';
-    const { status, data } = await api('GET', `/account/${id}/withdrawals`);
+  async function carregarHistorico() {
+    const { status, data } = await api('GET', '/account/me/withdrawals');
     const hist = document.getElementById('historico');
     if (status !== 200 || !Array.isArray(data) || data.length === 0) {
       hist.innerHTML = '<div class="empty-hist">Nenhum saque registrado.</div>';
@@ -323,70 +418,6 @@
     }).join('');
   }
 
-  function abrirFormNovaConta() {
-    document.getElementById('form-nova-conta').style.display = 'block';
-    document.querySelector('.btn-nova-conta').style.display = 'none';
-    document.getElementById('inp-nome').focus();
-  }
-
-  function fecharFormNovaConta() {
-    document.getElementById('form-nova-conta').style.display = 'none';
-    document.querySelector('.btn-nova-conta').style.display = 'block';
-    document.getElementById('inp-nome').value = '';
-    document.getElementById('inp-saldo').value = '';
-  }
-
-  async function submitNovaConta() {
-    const nome  = document.getElementById('inp-nome').value.trim();
-    const saldo = document.getElementById('inp-saldo').value.trim();
-    if (!nome || !saldo) return;
-    const { status, data } = await api('POST', '/account', { name: nome, balance: parseFloat(saldo) });
-    if (status === 201) {
-      fecharFormNovaConta();
-      await carregarContas();
-      selecionarConta(data.id);
-    } else {
-      alert(data?.erros?.join('\n') || 'Erro ao criar conta.');
-    }
-  }
-
-  function abrirEditSaldo() {
-    document.getElementById('edit-saldo-form').style.display = 'flex';
-    document.getElementById('inp-novo-saldo').value = document.getElementById('hdr-saldo').textContent;
-    document.getElementById('inp-novo-saldo').focus();
-  }
-
-  function fecharEditSaldo() {
-    document.getElementById('edit-saldo-form').style.display = 'none';
-  }
-
-  async function salvarSaldo() {
-    const novoSaldo = document.getElementById('inp-novo-saldo').value.trim();
-    const { status, data } = await api('PATCH', `/account/${contaAtualId}/balance`, { balance: parseFloat(novoSaldo) });
-    if (status === 200) {
-      document.getElementById('hdr-saldo').textContent = data.balance;
-      fecharEditSaldo();
-      await carregarContas();
-    } else {
-      alert(data?.erros?.join('\n') || 'Erro ao atualizar saldo.');
-    }
-  }
-
-  async function confirmarExcluir() {
-    if (!confirm(`Excluir a conta "${document.getElementById('hdr-nome').textContent}"? Esta ação não pode ser desfeita.`)) return;
-    const { status, data } = await api('DELETE', `/account/${contaAtualId}`);
-    if (status === 204) {
-      contaAtualId = null;
-      document.getElementById('painel-conta').style.display = 'none';
-      document.getElementById('empty-state').style.display = 'flex';
-      await carregarContas();
-    } else if (status === 409) {
-      mostrarTerminal('DELETE', `/account/${contaAtualId}`, 409, data);
-    } else {
-      alert('Erro ao excluir conta.');
-    }
-  }
-
   async function executarSaque() {
     const valor    = document.getElementById('inp-valor').value.trim();
     const tipo     = document.getElementById('sel-tipo').value;
@@ -401,28 +432,37 @@
     };
     if (agendado) body.schedule = schedule;
 
-    const path = `/account/${contaAtualId}/balance/withdraw`;
+    const path = '/account/me/balance/withdraw';
     mostrarCarregando();
 
     const { status, data } = await api('POST', path, body);
     mostrarTerminal('POST', path, status, data);
 
     if (status === 201) {
-      const { data: c } = await api('GET', `/account/${contaAtualId}`);
+      const { data: c } = await api('GET', '/account/me');
       if (c) document.getElementById('hdr-saldo').textContent = c.balance;
-      await carregarContas();
-      await carregarHistorico(contaAtualId);
+      await carregarHistorico();
     }
   }
 
-  function esc(str) {
-    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  async function confirmarExcluirConta() {
+    if (!confirm('Excluir sua conta? Esta ação não pode ser desfeita.')) return;
+    const { status, data } = await api('DELETE', '/account/me');
+    if (status === 204) {
+      sair();
+    } else if (status === 409) {
+      mostrarTerminal('DELETE', '/account/me', 409, data);
+    } else {
+      alert(data?.message || 'Erro ao excluir conta.');
+    }
   }
 
-  document.getElementById('inp-nome').addEventListener('keydown', e => { if (e.key === 'Enter') submitNovaConta(); });
-  document.getElementById('inp-novo-saldo').addEventListener('keydown', e => { if (e.key === 'Enter') salvarSaldo(); });
-
-  carregarContas();
+  (async function iniciar() {
+    if (token()) {
+      await entrarNoPainel();
+      if (!token()) mostrarAba('login');
+    }
+  })();
 </script>
 </body>
 </html>
