@@ -28,12 +28,23 @@ class ContaRepositorioMySQL implements ContaRepositorio
         return $this->paraEntidade($model);
     }
 
+    public function buscarPorEmail(string $email): Conta
+    {
+        $model = ContaModel::query()->where('email', $email)->first();
+        if ($model === null) {
+            throw new ContaNaoEncontradaException("Conta com e-mail '{$email}' não encontrada.");
+        }
+        return $this->paraEntidade($model);
+    }
+
     public function criar(Conta $conta): void
     {
         ContaModel::create([
-            'id'      => $conta->id(),
-            'name'    => $conta->nome(),
-            'balance' => $conta->obterSaldo()->toDecimal(),
+            'id'            => $conta->id(),
+            'name'          => $conta->nome(),
+            'balance'       => $conta->obterSaldo()->toDecimal(),
+            'email'         => $conta->email(),
+            'password_hash' => $conta->senhaHash(),
         ]);
     }
 
@@ -63,7 +74,9 @@ class ContaRepositorioMySQL implements ContaRepositorio
         return new Conta(
             $model->id,
             $model->name,
-            Dinheiro::deDecimal((string) $model->balance)
+            Dinheiro::deDecimal((string) $model->balance),
+            $model->email,
+            $model->password_hash
         );
     }
 }

@@ -3,106 +3,46 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Http;
 
-use App\Application\Conta\{AtualizarSaldo, CriarConta, ExcluirConta};
+use App\Application\Conta\ExcluirConta;
 use App\Application\Saque\{AgendarSaque, ListarSaquesDaConta, ProcessarSaque};
 use App\Domain\Conta\ContaRepositorio;
 use App\Domain\Conta\Exception\{ContaNaoEncontradaException, ContaPossuiSaquesException};
 use App\Domain\Conta\Exception\SaldoInsuficienteException;
 use App\Domain\Saque\Exception\{AgendamentoNoPassadoException, TipoPixInvalidoException};
-use Hyperf\HttpServer\Annotation\{Controller, DeleteMapping, GetMapping, PatchMapping, PostMapping};
+use App\Infrastructure\Http\Middleware\AutenticacaoMiddleware;
+use Hyperf\HttpServer\Annotation\{Controller, DeleteMapping, GetMapping, Middleware, PostMapping};
 use Hyperf\HttpServer\Contract\{RequestInterface, ResponseInterface};
 
 #[Controller(prefix: '/account')]
+#[Middleware(AutenticacaoMiddleware::class)]
 class ContaController
 {
     public function __construct(
         private readonly ProcessarSaque $processarSaque,
         private readonly AgendarSaque $agendarSaque,
-        private readonly CriarConta $criarConta,
-        private readonly AtualizarSaldo $atualizarSaldo,
         private readonly ExcluirConta $excluirConta,
         private readonly ListarSaquesDaConta $listarSaquesDaConta,
         private readonly ContaRepositorio $contaRepositorio
     ) {}
 
-    #[PostMapping(path: '')]
-    public function criar(RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
+    #[GetMapping(path: 'me')]
+    public function minhaConta(RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $erros = $this->validarCriacao($body);
-        if (!empty($erros)) {
-            return $response->json(['erros' => $erros])->withStatus(422);
-        }
-
-        try {
-            $conta = $this->criarConta->executar(trim($body['name']), (string) $body['balance']);
-            return $response->json([
-                'id'      => $conta->id(),
-                'name'    => $conta->nome(),
-                'balance' => $conta->obterSaldo()->toDecimal(),
-            ])->withStatus(201);
-        } catch (\Throwable) {
-            return $response->json(['message' => 'Erro interno. Tente novamente.'])->withStatus(500);
-        }
+        $conta = $this->contaRepositorio->buscarPorId((string) $request->getAttribute('contaId'));
+        return $response->json([
+            'id'      => $conta->id(),
+            'name'    => $conta->nome(),
+            'email'   => $conta->email(),
+            'balance' => $conta->obterSaldo()->toDecimal(),
+        ]);
     }
 
-    #[GetMapping(path: '')]
-    public function listar(ResponseInterface $response): \Psr\Http\Message\ResponseInterface
-    {
-        $contas = $this->contaRepositorio->listar();
-        return $response->json(array_map(fn($c) => [
-            'id'      => $c->id(),
-            'name'    => $c->nome(),
-            'balance' => $c->obterSaldo()->toDecimal(),
-        ], $contas));
-    }
-
-    #[GetMapping(path: '{id}')]
-    public function obter(string $id, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
+    #[DeleteMapping(path: 'me')]
+    public function excluirMinhaConta(RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
         try {
-            $conta = $this->contaRepositorio->buscarPorId($id);
-            return $response->json([
-                'id'      => $conta->id(),
-                'name'    => $conta->nome(),
-                'balance' => $conta->obterSaldo()->toDecimal(),
-            ]);
-        } catch (ContaNaoEncontradaException) {
-            return $response->json(['message' => 'Conta não encontrada.'])->withStatus(404);
-        }
-    }
-
-    #[PatchMapping(path: '{id}/balance')]
-    public function atualizarSaldo(string $id, RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
-    {
-        $body = $request->getParsedBody();
-        $erros = $this->validarSaldo($body);
-        if (!empty($erros)) {
-            return $response->json(['erros' => $erros])->withStatus(422);
-        }
-
-        try {
-            $conta = $this->atualizarSaldo->executar($id, (string) $body['balance']);
-            return $response->json([
-                'id'      => $conta->id(),
-                'name'    => $conta->nome(),
-                'balance' => $conta->obterSaldo()->toDecimal(),
-            ]);
-        } catch (ContaNaoEncontradaException) {
-            return $response->json(['message' => 'Conta não encontrada.'])->withStatus(404);
-        } catch (\Throwable) {
-            return $response->json(['message' => 'Erro interno. Tente novamente.'])->withStatus(500);
-        }
-    }
-
-    #[DeleteMapping(path: '{id}')]
-    public function excluir(string $id, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
-    {
-        try {
-            $this->excluirConta->executar($id);
+            $this->excluirConta->executar((string) $request->getAttribute('contaId'));
             return $response->withStatus(204);
-        } catch (ContaNaoEncontradaException) {
-            return $response->json(['message' => 'Conta não encontrada.'])->withStatus(404);
         } catch (ContaPossuiSaquesException) {
             return $response->json(['message' => 'Conta possui saques e não pode ser excluída.'])->withStatus(409);
         } catch (\Throwable) {
@@ -110,21 +50,18 @@ class ContaController
         }
     }
 
-    #[GetMapping(path: '{id}/withdrawals')]
-    public function listarSaques(string $id, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
+    #[GetMapping(path: 'me/withdrawals')]
+    public function listarSaques(RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
-        try {
-            return $response->json($this->listarSaquesDaConta->executar($id));
-        } catch (ContaNaoEncontradaException) {
-            return $response->json(['message' => 'Conta não encontrada.'])->withStatus(404);
-        }
+        return $response->json($this->listarSaquesDaConta->executar((string) $request->getAttribute('contaId')));
     }
 
-    #[PostMapping(path: '{id}/balance/withdraw')]
-    public function sacar(string $id, RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
+    #[PostMapping(path: 'me/balance/withdraw')]
+    public function sacar(RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
     {
+        $id   = (string) $request->getAttribute('contaId');
         $body = $request->getParsedBody();
-        $erros = $this->validarSaque($body, $id);
+        $erros = $this->validarSaque($body);
         if (!empty($erros)) {
             return $response->json(['erros' => $erros])->withStatus(422);
         }
@@ -167,42 +104,11 @@ class ContaController
         }
     }
 
-    private function validarCriacao(mixed $body): array
+    private function validarSaque(mixed $body): array
     {
         $erros = [];
         if (!is_array($body)) {
             return ['body deve ser um JSON válido'];
-        }
-        if (empty(trim($body['name'] ?? ''))) {
-            $erros[] = 'name é obrigatório e não pode ser vazio';
-        }
-        $erros = array_merge($erros, $this->validarSaldo($body));
-        return $erros;
-    }
-
-    private function validarSaldo(mixed $body): array
-    {
-        if (!is_array($body)) {
-            return ['body deve ser um JSON válido'];
-        }
-        $balance = $body['balance'] ?? null;
-        if ($balance === null
-            || (!is_int($balance) && !is_float($balance) && !preg_match('/^\d+(\.\d{1,2})?$/', (string) $balance))
-            || (float) $balance < 0
-        ) {
-            return ['balance deve ser um número >= 0 com no máximo 2 casas decimais (ex: 500.00)'];
-        }
-        return [];
-    }
-
-    private function validarSaque(mixed $body, string $contaId): array
-    {
-        $erros = [];
-        if (!is_array($body)) {
-            return ['body deve ser um JSON válido'];
-        }
-        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $contaId)) {
-            $erros[] = 'accountId deve ser um UUID válido';
         }
         if (($body['method'] ?? '') !== 'PIX') {
             $erros[] = 'method deve ser "PIX"';

@@ -11,7 +11,9 @@ class Conta
     public function __construct(
         private readonly string $id,
         private readonly string $nome,
-        private Dinheiro $saldo
+        private Dinheiro $saldo,
+        private readonly string $email = '',
+        private readonly string $senhaHash = ''
     ) {}
 
     public function id(): string
@@ -22,6 +24,21 @@ class Conta
     public function nome(): string
     {
         return $this->nome;
+    }
+
+    public function email(): string
+    {
+        return $this->email;
+    }
+
+    public function senhaHash(): string
+    {
+        return $this->senhaHash;
+    }
+
+    public function senhaConfere(string $senhaPlana): bool
+    {
+        return password_verify($senhaPlana, $this->senhaHash);
     }
 
     public function obterSaldo(): Dinheiro

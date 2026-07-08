@@ -7,6 +7,8 @@ interface ContaRepositorio
 {
     public function buscarPorId(string $id): Conta;
     public function buscarPorIdComLock(string $id): Conta;
+    /** @throws \App\Domain\Conta\Exception\ContaNaoEncontradaException */
+    public function buscarPorEmail(string $email): Conta;
     public function criar(Conta $conta): void;
     /** @return Conta[] */
     public function listar(): array;
