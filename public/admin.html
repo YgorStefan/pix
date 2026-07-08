@@ -34,6 +34,8 @@
     #tela-auth { min-height: calc(100vh - 53px); display: flex; align-items: center; justify-content: center; padding: 20px; }
     #card-auth { width: 100%; max-width: 340px; border: 1px solid var(--border-dim); border-radius: 6px; background: var(--bg-alt); padding: 20px; }
     .auth-title { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 16px; text-align: center; }
+    .btn-voltar { display: inline-flex; align-items: center; gap: 4px; color: var(--text-dim); font-size: 11px; margin-bottom: 16px; }
+    .btn-voltar:hover { color: var(--green); }
     .auth-form { display: flex; flex-direction: column; gap: 12px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
     .field label { font-size: 9px; letter-spacing: 1px; color: var(--text-dim); }
@@ -120,6 +122,7 @@
 
   <div id="tela-auth">
     <div id="card-auth">
+      <a class="btn-voltar" href="/index.html">← Voltar</a>
       <div class="auth-title">ACESSO RESTRITO · ADMINISTRAÇÃO</div>
       <div class="auth-erro" id="auth-erro"></div>
       <form class="auth-form" onsubmit="return submitLogin(event)">

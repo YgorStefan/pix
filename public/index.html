@@ -198,7 +198,7 @@
           </div>
           <div class="field field-chave">
             <label>CHAVE PIX</label>
-            <input id="inp-chave" type="text" placeholder="usuario@email.com">
+            <input id="inp-chave" type="text" placeholder="usuario@email.com" oninput="mascararChave()">
           </div>
           <button class="btn-sacar" onclick="executarSaque()">SACAR</button>
         </div>
@@ -233,9 +233,9 @@
   const TOKEN_KEY = 'casepix_token';
   const placeholders = {
     email:    'usuario@email.com',
-    cpf:      '123.456.789-00 ou 12345678900',
-    cnpj:     '12.345.678/0001-90 ou 12345678000190',
-    telefone: '+5511999999999',
+    cpf:      '123.456.789-00',
+    cnpj:     '12.345.678/0001-90',
+    telefone: '+55 (11) 99999-9999',
     aleatoria:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
   };
 
@@ -364,7 +364,60 @@
 
   function atualizarPlaceholderChave() {
     const tipo = document.getElementById('sel-tipo').value;
-    document.getElementById('inp-chave').placeholder = placeholders[tipo] || '';
+    const input = document.getElementById('inp-chave');
+    input.placeholder = placeholders[tipo] || '';
+    input.value = '';
+  }
+
+  function apenasDigitos(v) { return v.replace(/\D/g, ''); }
+
+  function mascararCpf(v) {
+    v = apenasDigitos(v).slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    return v;
+  }
+
+  function mascararCnpj(v) {
+    v = apenasDigitos(v).slice(0, 14);
+    v = v.replace(/(\d{2})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1/$2');
+    v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    return v;
+  }
+
+  function mascararTelefone(v) {
+    let d = apenasDigitos(v);
+    if (d.length > 11 && d.startsWith('55')) d = d.slice(2);
+    d = d.slice(0, 11);
+    if (d.length === 0) return '+55';
+    let out = '+55 (' + d.slice(0, 2);
+    if (d.length >= 2) out += ')';
+    if (d.length > 2) {
+      const resto = d.slice(2);
+      out += resto.length > 4
+        ? ' ' + resto.slice(0, -4) + '-' + resto.slice(-4)
+        : ' ' + resto;
+    }
+    return out;
+  }
+
+  function mascararAleatoria(v) {
+    const s = v.replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
+    return [s.slice(0, 8), s.slice(8, 12), s.slice(12, 16), s.slice(16, 20), s.slice(20, 32)]
+      .filter(p => p.length > 0)
+      .join('-');
+  }
+
+  function mascararChave() {
+    const tipo = document.getElementById('sel-tipo').value;
+    const input = document.getElementById('inp-chave');
+    if (tipo === 'cpf') input.value = mascararCpf(input.value);
+    else if (tipo === 'cnpj') input.value = mascararCnpj(input.value);
+    else if (tipo === 'telefone') input.value = mascararTelefone(input.value);
+    else if (tipo === 'aleatoria') input.value = mascararAleatoria(input.value);
   }
 
   function toggleSchedule() {
