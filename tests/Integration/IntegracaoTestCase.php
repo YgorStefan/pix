@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use App\Infrastructure\Auth\TokenService;
 use Hyperf\DbConnection\Db;
 use Hyperf\Testing\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -21,7 +22,7 @@ abstract class IntegracaoTestCase extends TestCase
 
         \Swoole\Coroutine\run(function () use ($method, $args, &$response, &$exception) {
             try {
-                $response = \Hyperf\Support\make(\Hyperf\Testing\Http\Client::class)->{$method}(...$args);
+                $response = \Hyperf\Support\make(\Tests\Integration\Support\TestClient::class)->{$method}(...$args);
             } catch (\Throwable $e) {
                 $exception = $e;
             }
@@ -48,12 +49,33 @@ abstract class IntegracaoTestCase extends TestCase
     protected function criarConta(string $nome, string $saldo): string
     {
         $id = Uuid::uuid4()->toString();
-        Db::table('account')->insert(['id' => $id, 'name' => $nome, 'balance' => $saldo]);
+        Db::table('account')->insert([
+            'id'            => $id,
+            'name'          => $nome,
+            'balance'       => $saldo,
+            'email'         => "{$id}@teste.com",
+            'password_hash' => password_hash('senha123', PASSWORD_BCRYPT),
+        ]);
         return $id;
     }
 
     protected function obterSaldo(string $contaId): string
     {
         return Db::table('account')->where('id', $contaId)->value('balance');
+    }
+
+    protected function tokenParaConta(string $contaId): string
+    {
+        return make(TokenService::class)->gerar($contaId, 'conta');
+    }
+
+    protected function tokenAdmin(): string
+    {
+        return make(TokenService::class)->gerar((string) env('ADMIN_EMAIL'), 'admin');
+    }
+
+    protected function authHeader(string $token): array
+    {
+        return ['Authorization' => "Bearer {$token}"];
     }
 }

@@ -12,14 +12,15 @@ class SaqueAgendadoTest extends IntegracaoTestCase
     public function testSaqueAgendadoNaoDeduzSaldoImediatamente(): void
     {
         $contaId = $this->criarConta('Pedro', '300.00');
+        $token   = $this->tokenParaConta($contaId);
         $futuro  = (new DateTimeImmutable('+2 hours', new DateTimeZone('America/Sao_Paulo')))->format('Y-m-d H:i');
 
-        $response = $this->post("/account/{$contaId}/balance/withdraw", [
+        $response = $this->post('/account/me/balance/withdraw', [
             'method'   => 'PIX',
             'pix'      => ['type' => 'email', 'key' => 'pedro@email.com'],
             'amount'   => 100.00,
             'schedule' => $futuro,
-        ]);
+        ], $this->authHeader($token));
 
         $this->assertSame(201, $response->getStatusCode());
 
@@ -34,13 +35,14 @@ class SaqueAgendadoTest extends IntegracaoTestCase
     public function testAgendamentoNoPassadoRetorna422(): void
     {
         $contaId = $this->criarConta('Ana', '300.00');
+        $token   = $this->tokenParaConta($contaId);
 
-        $response = $this->post("/account/{$contaId}/balance/withdraw", [
+        $response = $this->post('/account/me/balance/withdraw', [
             'method'   => 'PIX',
             'pix'      => ['type' => 'email', 'key' => 'ana@email.com'],
             'amount'   => 50.00,
             'schedule' => '2020-01-01 10:00',
-        ]);
+        ], $this->authHeader($token));
 
         $this->assertSame(422, $response->getStatusCode());
     }

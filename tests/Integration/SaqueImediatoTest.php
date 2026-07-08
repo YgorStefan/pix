@@ -10,13 +10,14 @@ class SaqueImediatoTest extends IntegracaoTestCase
     public function testSaqueImediatoDedusSaldoERegistraNoBanco(): void
     {
         $contaId = $this->criarConta('João', '500.00');
+        $token   = $this->tokenParaConta($contaId);
 
-        $response = $this->post("/account/{$contaId}/balance/withdraw", [
+        $response = $this->post('/account/me/balance/withdraw', [
             'method'   => 'PIX',
             'pix'      => ['type' => 'email', 'key' => 'joao@email.com'],
             'amount'   => 150.75,
             'schedule' => null,
-        ]);
+        ], $this->authHeader($token));
 
         $this->assertSame(201, $response->getStatusCode());
 
@@ -42,13 +43,14 @@ class SaqueImediatoTest extends IntegracaoTestCase
     public function testSaqueRecusadoPorSaldoInsuficiente(): void
     {
         $contaId = $this->criarConta('Maria', '50.00');
+        $token   = $this->tokenParaConta($contaId);
 
-        $response = $this->post("/account/{$contaId}/balance/withdraw", [
+        $response = $this->post('/account/me/balance/withdraw', [
             'method'   => 'PIX',
             'pix'      => ['type' => 'email', 'key' => 'maria@email.com'],
             'amount'   => 100.00,
             'schedule' => null,
-        ]);
+        ], $this->authHeader($token));
 
         $this->assertSame(422, $response->getStatusCode());
         $saldo = $this->obterSaldo($contaId);
@@ -57,12 +59,25 @@ class SaqueImediatoTest extends IntegracaoTestCase
 
     public function testContaNaoEncontradaRetorna404(): void
     {
-        $response = $this->post('/account/00000000-0000-0000-0000-000000000000/balance/withdraw', [
+        $token = $this->tokenParaConta('00000000-0000-0000-0000-000000000000');
+
+        $response = $this->post('/account/me/balance/withdraw', [
+            'method'   => 'PIX',
+            'pix'      => ['type' => 'email', 'key' => 'x@email.com'],
+            'amount'   => 10.00,
+            'schedule' => null,
+        ], $this->authHeader($token));
+        $this->assertSame(404, $response->getStatusCode());
+    }
+
+    public function testSemTokenRetorna401(): void
+    {
+        $response = $this->post('/account/me/balance/withdraw', [
             'method'   => 'PIX',
             'pix'      => ['type' => 'email', 'key' => 'x@email.com'],
             'amount'   => 10.00,
             'schedule' => null,
         ]);
-        $this->assertSame(404, $response->getStatusCode());
+        $this->assertSame(401, $response->getStatusCode());
     }
 }

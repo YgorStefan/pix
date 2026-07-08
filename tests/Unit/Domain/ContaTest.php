@@ -52,4 +52,18 @@ class ContaTest extends TestCase
         $this->conta->alterarSaldo(Dinheiro::deDecimal('0.00'));
         $this->assertSame('0.00', $this->conta->obterSaldo()->toDecimal());
     }
+
+    public function testSenhaConfereComHashCorreto(): void
+    {
+        $conta = new Conta('uuid-2', 'Maria', Dinheiro::deDecimal('0.00'), 'maria@teste.com', password_hash('senha123', PASSWORD_BCRYPT));
+        $this->assertTrue($conta->senhaConfere('senha123'));
+        $this->assertFalse($conta->senhaConfere('senha-errada'));
+        $this->assertSame('maria@teste.com', $conta->email());
+    }
+
+    public function testEmailESenhaSaoOpcionais(): void
+    {
+        $this->assertSame('', $this->conta->email());
+        $this->assertFalse($this->conta->senhaConfere('qualquer-coisa'));
+    }
 }

@@ -1,0 +1,78 @@
+<?php
+declare(strict_types=1);
+
+namespace Tests\Unit\Infrastructure\Http\Middleware;
+
+use App\Infrastructure\Auth\TokenService;
+use App\Infrastructure\Http\Middleware\AdminMiddleware;
+use Hyperf\HttpServer\Contract\ResponseInterface as HttpResponse;
+use Mockery;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface as PsrResponse;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+class AdminMiddlewareTest extends TestCase
+{
+    protected function tearDown(): void { Mockery::close(); }
+
+    public function testBloqueiaRequisicaoSemToken(): void
+    {
+        $tokenService = Mockery::mock(TokenService::class);
+        $httpResponse = Mockery::mock(HttpResponse::class);
+        $psrResponse  = Mockery::mock(PsrResponse::class);
+        $httpResponse->expects('json')->andReturn($psrResponse);
+        $psrResponse->expects('withStatus')->with(401)->andReturn($psrResponse);
+
+        $request = Mockery::mock(ServerRequestInterface::class);
+        $request->expects('getHeaderLine')->with('Authorization')->andReturn('');
+
+        $handler = Mockery::mock(RequestHandlerInterface::class);
+        $handler->shouldNotReceive('handle');
+
+        $middleware = new AdminMiddleware($tokenService, $httpResponse);
+        $resultado  = $middleware->process($request, $handler);
+
+        $this->assertSame($psrResponse, $resultado);
+    }
+
+    public function testPermiteRequisicaoComTokenValidoDeAdmin(): void
+    {
+        $tokenService = Mockery::mock(TokenService::class);
+        $tokenService->expects('validar')->with('token-admin')->andReturn(['sub' => 'admin@casepix.com', 'role' => 'admin']);
+        $httpResponse = Mockery::mock(HttpResponse::class);
+
+        $request = Mockery::mock(ServerRequestInterface::class);
+        $request->expects('getHeaderLine')->with('Authorization')->andReturn('Bearer token-admin');
+
+        $respostaEsperada = Mockery::mock(PsrResponse::class);
+        $handler = Mockery::mock(RequestHandlerInterface::class);
+        $handler->expects('handle')->with($request)->andReturn($respostaEsperada);
+
+        $middleware = new AdminMiddleware($tokenService, $httpResponse);
+        $resultado  = $middleware->process($request, $handler);
+
+        $this->assertSame($respostaEsperada, $resultado);
+    }
+
+    public function testBloqueiaTokenDeContaComumNaRotaDeAdmin(): void
+    {
+        $tokenService = Mockery::mock(TokenService::class);
+        $tokenService->expects('validar')->andReturn(['sub' => 'conta-1', 'role' => 'conta']);
+        $httpResponse = Mockery::mock(HttpResponse::class);
+        $psrResponse  = Mockery::mock(PsrResponse::class);
+        $httpResponse->expects('json')->andReturn($psrResponse);
+        $psrResponse->expects('withStatus')->with(401)->andReturn($psrResponse);
+
+        $request = Mockery::mock(ServerRequestInterface::class);
+        $request->expects('getHeaderLine')->andReturn('Bearer token-conta');
+
+        $handler = Mockery::mock(RequestHandlerInterface::class);
+        $handler->shouldNotReceive('handle');
+
+        $middleware = new AdminMiddleware($tokenService, $httpResponse);
+        $resultado  = $middleware->process($request, $handler);
+
+        $this->assertSame($psrResponse, $resultado);
+    }
+}

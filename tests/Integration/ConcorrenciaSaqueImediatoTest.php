@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use Firebase\JWT\JWT;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -46,6 +47,7 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
 
     private PDO $pdo;
     private string $baseUrl;
+    private array $envServidorReal;
 
     protected function setUp(): void
     {
@@ -58,16 +60,22 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
             $this->markTestSkipped('Extensão cURL não disponível neste ambiente.');
         }
 
-        $this->baseUrl = rtrim(
-            $_ENV['APP_BASE_URL'] ?? getenv('APP_BASE_URL') ?: 'http://localhost:9501',
-            '/'
-        );
+        // Este teste faz requests HTTP reais contra o servidor já em execução
+        // (subido via `docker compose up`, que sempre usa o `.env`). Por isso lê
+        // o `.env` diretamente, em vez de $_ENV/getenv(): quando rodado via
+        // `phpunit.integration.xml` (APP_ENV=testing), o bootstrap já carregou
+        // `.env.testing` nessas variáveis, o que apontaria para o banco
+        // `saque_pix_test` — diferente do banco que o servidor real utiliza —
+        // e faria toda conta criada aqui ser invisível para ele (404 em massa).
+        $this->envServidorReal = \Dotenv\Dotenv::createArrayBacked(dirname(__DIR__, 2), '.env')->safeLoad();
 
-        $dbHost = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: 'localhost';
-        $dbPort = $_ENV['DB_PORT'] ?? getenv('DB_PORT') ?: '3306';
-        $dbName = $_ENV['DB_DATABASE'] ?? getenv('DB_DATABASE') ?: 'saque_pix';
-        $dbUser = $_ENV['DB_USERNAME'] ?? getenv('DB_USERNAME') ?: 'app';
-        $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
+        $this->baseUrl = rtrim($this->envServidorReal['APP_BASE_URL'] ?? 'http://localhost:9501', '/');
+
+        $dbHost = $this->envServidorReal['DB_HOST'] ?? 'localhost';
+        $dbPort = $this->envServidorReal['DB_PORT'] ?? '3306';
+        $dbName = $this->envServidorReal['DB_DATABASE'] ?? 'saque_pix';
+        $dbUser = $this->envServidorReal['DB_USERNAME'] ?? 'app';
+        $dbPass = $this->envServidorReal['DB_PASSWORD'] ?? 'secret';
 
         $this->pdo = new PDO(
             sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName),
@@ -103,14 +111,15 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
     {
         // Setup: conta com saldo limitado
         $contaId = Uuid::uuid4()->toString();
-        $this->pdo->prepare('INSERT INTO account (id, name, balance) VALUES (?, ?, ?)')
-                  ->execute([$contaId, 'ConcorrênciaTest', self::SALDO_INICIAL]);
+        $this->pdo->prepare('INSERT INTO account (id, name, balance, email, password_hash) VALUES (?, ?, ?, ?, ?)')
+                  ->execute([$contaId, 'ConcorrênciaTest', self::SALDO_INICIAL, "{$contaId}@teste.com", password_hash('senha123', PASSWORD_BCRYPT)]);
+        $token = $this->tokenParaConta($contaId);
 
         // Arquivo onde os filhos gravam seus resultados (LOCK_EX evita corrupção)
         $arquivoResultados = tempnam(sys_get_temp_dir(), 'concorrencia-');
         file_put_contents($arquivoResultados, '');
 
-        $url = $this->baseUrl . '/account/' . $contaId . '/balance/withdraw';
+        $url = $this->baseUrl . '/account/me/balance/withdraw';
         $body = json_encode([
             'method'   => 'PIX',
             'pix'      => ['type' => 'email', 'key' => 'concorrencia@test.com'],
@@ -127,7 +136,7 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
             }
             if ($pid === 0) {
                 // Filho: faz o request e grava o resultado
-                $this->dispararSaqueComoFilho($i, $url, $body, $arquivoResultados);
+                $this->dispararSaqueComoFilho($i, $url, $body, $token, $arquivoResultados);
                 exit(0);
             }
             $pids[] = $pid;
@@ -140,11 +149,11 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
 
         // Reconectar ao MySQL: fork() compartilha o descritor da conexão e os
         // processos filho a fecham ao sair, invalidando a conexão do pai.
-        $dbHost = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: 'localhost';
-        $dbPort = $_ENV['DB_PORT'] ?? getenv('DB_PORT') ?: '3306';
-        $dbName = $_ENV['DB_DATABASE'] ?? getenv('DB_DATABASE') ?: 'saque_pix';
-        $dbUser = $_ENV['DB_USERNAME'] ?? getenv('DB_USERNAME') ?: 'app';
-        $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
+        $dbHost = $this->envServidorReal['DB_HOST'] ?? 'localhost';
+        $dbPort = $this->envServidorReal['DB_PORT'] ?? '3306';
+        $dbName = $this->envServidorReal['DB_DATABASE'] ?? 'saque_pix';
+        $dbUser = $this->envServidorReal['DB_USERNAME'] ?? 'app';
+        $dbPass = $this->envServidorReal['DB_PASSWORD'] ?? 'secret';
         $this->pdo = new PDO(
             sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName),
             $dbUser,
@@ -225,6 +234,18 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
         );
     }
 
+    private function tokenParaConta(string $contaId): string
+    {
+        $chave = $this->envServidorReal['APP_KEY'] ?? '';
+        $agora = time();
+        return JWT::encode([
+            'sub'  => $contaId,
+            'role' => 'conta',
+            'iat'  => $agora,
+            'exp'  => $agora + 3600,
+        ], $chave, 'HS256');
+    }
+
     /**
      * Executado em cada processo filho. Faz a requisição e grava o resultado
      * em arquivo compartilhado (com lock para evitar corrupção).
@@ -233,6 +254,7 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
         int $workerId,
         string $url,
         string $body,
+        string $token,
         string $arquivoResultados
     ): void {
         // Pequeno offset para aumentar a chance dos requests baterem juntos
@@ -243,7 +265,7 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $body,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', "Authorization: Bearer {$token}"],
             CURLOPT_TIMEOUT        => self::TIMEOUT_CURL,
         ]);
         $resposta = curl_exec($ch);
