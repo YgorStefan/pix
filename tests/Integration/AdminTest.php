@@ -57,6 +57,59 @@ class AdminTest extends IntegracaoTestCase
         $this->assertSame(204, $exclusao->getStatusCode());
     }
 
+    public function testAdminCriaNovaConta(): void
+    {
+        $tokenAdmin = $this->tokenAdmin();
+
+        $resposta = $this->post('/admin/accounts', [
+            'name'     => 'Conta Criada Pelo Admin',
+            'email'    => 'criada-pelo-admin@teste.com',
+            'password' => 'senha123',
+            'balance'  => '50.00',
+        ], $this->authHeader($tokenAdmin));
+
+        $this->assertSame(201, $resposta->getStatusCode());
+        $dados = json_decode((string) $resposta->getBody(), true);
+        $this->assertSame('Conta Criada Pelo Admin', $dados['name']);
+        $this->assertSame('50.00', $dados['balance']);
+
+        $lista = $this->get('/admin/accounts', [], $this->authHeader($tokenAdmin));
+        $this->assertCount(1, json_decode((string) $lista->getBody(), true));
+    }
+
+    public function testAdminNaoConsegueCriarContaComEmailDuplicado(): void
+    {
+        $tokenAdmin = $this->tokenAdmin();
+        $dadosConta = [
+            'name'     => 'Conta Duplicada',
+            'email'    => 'duplicada@teste.com',
+            'password' => 'senha123',
+        ];
+
+        $this->post('/admin/accounts', $dadosConta, $this->authHeader($tokenAdmin));
+        $resposta = $this->post('/admin/accounts', $dadosConta, $this->authHeader($tokenAdmin));
+
+        $this->assertSame(409, $resposta->getStatusCode());
+    }
+
+    public function testAdminNaoConsegueCriarContaSemTokenRetorna401(): void
+    {
+        $resposta = $this->post('/admin/accounts', [
+            'name' => 'Sem Token', 'email' => 'semtoken@teste.com', 'password' => 'senha123',
+        ]);
+        $this->assertSame(401, $resposta->getStatusCode());
+    }
+
+    public function testAdminNaoConsegueCriarContaComDadosInvalidos(): void
+    {
+        $tokenAdmin = $this->tokenAdmin();
+        $resposta = $this->post('/admin/accounts', [
+            'name' => '', 'email' => 'invalido', 'password' => '123',
+        ], $this->authHeader($tokenAdmin));
+
+        $this->assertSame(422, $resposta->getStatusCode());
+    }
+
     public function testAdminNaoConsegueExcluirContaComSaques(): void
     {
         $contaId = $this->criarConta('Cliente Com Saque', '500.00');

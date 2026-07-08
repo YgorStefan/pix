@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Http;
 
-use App\Application\Conta\{AtualizarSaldo, ExcluirConta};
+use App\Application\Conta\{AtualizarSaldo, ExcluirConta, RegistrarConta};
 use App\Application\Saque\ListarSaquesDaConta;
 use App\Domain\Conta\ContaRepositorio;
-use App\Domain\Conta\Exception\{ContaNaoEncontradaException, ContaPossuiSaquesException, CredenciaisInvalidasException};
+use App\Domain\Conta\Exception\{ContaNaoEncontradaException, ContaPossuiSaquesException, CredenciaisInvalidasException, EmailJaCadastradoException};
 use App\Infrastructure\Auth\{AutenticarAdmin, TokenService};
 use App\Infrastructure\Http\Middleware\AdminMiddleware;
 use Hyperf\HttpServer\Annotation\{Controller, DeleteMapping, GetMapping, Middleware, PatchMapping, PostMapping};
@@ -19,6 +19,7 @@ class AdminController
         private readonly AutenticarAdmin $autenticarAdmin,
         private readonly TokenService $tokenService,
         private readonly ContaRepositorio $contaRepositorio,
+        private readonly RegistrarConta $registrarConta,
         private readonly AtualizarSaldo $atualizarSaldo,
         private readonly ExcluirConta $excluirConta,
         private readonly ListarSaquesDaConta $listarSaquesDaConta
@@ -53,6 +54,36 @@ class AdminController
             'email'   => $c->email(),
             'balance' => $c->obterSaldo()->toDecimal(),
         ], $contas));
+    }
+
+    #[PostMapping(path: 'accounts')]
+    #[Middleware(AdminMiddleware::class)]
+    public function criar(RequestInterface $request, ResponseInterface $response): \Psr\Http\Message\ResponseInterface
+    {
+        $body = $request->getParsedBody();
+        $erros = $this->validarCriacao($body);
+        if (!empty($erros)) {
+            return $response->json(['erros' => $erros])->withStatus(422);
+        }
+
+        try {
+            $conta = $this->registrarConta->executar(
+                trim($body['name']),
+                strtolower(trim($body['email'])),
+                (string) $body['password'],
+                (string) ($body['balance'] ?? '0')
+            );
+            return $response->json([
+                'id'      => $conta->id(),
+                'name'    => $conta->nome(),
+                'email'   => $conta->email(),
+                'balance' => $conta->obterSaldo()->toDecimal(),
+            ])->withStatus(201);
+        } catch (EmailJaCadastradoException) {
+            return $response->json(['message' => 'E-mail já cadastrado.'])->withStatus(409);
+        } catch (\Throwable) {
+            return $response->json(['message' => 'Erro interno. Tente novamente.'])->withStatus(500);
+        }
     }
 
     #[GetMapping(path: 'accounts/{id}/withdrawals')]
@@ -105,6 +136,32 @@ class AdminController
         } catch (\Throwable) {
             return $response->json(['message' => 'Erro interno. Tente novamente.'])->withStatus(500);
         }
+    }
+
+    private function validarCriacao(mixed $body): array
+    {
+        if (!is_array($body)) {
+            return ['body deve ser um JSON válido'];
+        }
+        $erros = [];
+        if (empty(trim($body['name'] ?? ''))) {
+            $erros[] = 'name é obrigatório e não pode ser vazio';
+        }
+        if (!filter_var($body['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
+            $erros[] = 'email deve ser um endereço válido';
+        }
+        if (strlen((string) ($body['password'] ?? '')) < 6) {
+            $erros[] = 'password deve ter no mínimo 6 caracteres';
+        }
+        if (array_key_exists('balance', $body) && $body['balance'] !== null) {
+            $balance = $body['balance'];
+            if ((!is_int($balance) && !is_float($balance) && !preg_match('/^\d+(\.\d{1,2})?$/', (string) $balance))
+                || (float) $balance < 0
+            ) {
+                $erros[] = 'balance deve ser um número >= 0 com no máximo 2 casas decimais (ex: 500.00)';
+            }
+        }
+        return $erros;
     }
 
     private function validarSaldo(mixed $body): array

@@ -9,9 +9,9 @@
       --bg: #020617; --bg-alt: #0f172a; --bg-card: #1e293b;
       --border: #334155; --border-dim: #1e293b;
       --text: #94a3b8; --text-bright: #f1f5f9; --text-dim: #475569;
-      --green: #22c55e; --green-bg: #0a1f0f;
+      --green: #22c55e; --green-bg: #0a1f0f; --green-border: #166534;
       --red: #ef4444; --red-bg: #1c0a0a;
-      --amber: #f59e0b; --amber-bg: #1c1203; --amber-border: #92620a;
+      --amber: #f59e0b;
       --blue: #60a5fa;
       --font: 'Fira Code', 'Courier New', monospace;
     }
@@ -25,7 +25,7 @@
 
     /* ── TOPBAR ── */
     #topbar { height: 52px; border-bottom: 1px solid var(--border-dim); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-    .logo { color: var(--amber); font-weight: 700; font-size: 14px; letter-spacing: 1px; }
+    .logo { color: var(--green); font-weight: 700; font-size: 14px; letter-spacing: 1px; }
     .logo-sub { color: var(--text-dim); font-size: 10px; letter-spacing: 2px; margin-left: 8px; }
     .btn-sair { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 11px; }
     .btn-sair:hover { border-color: var(--red); color: var(--red); }
@@ -38,9 +38,9 @@
     .field { display: flex; flex-direction: column; gap: 4px; }
     .field label { font-size: 9px; letter-spacing: 1px; color: var(--text-dim); }
     .field input { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; color: var(--text-bright); outline: none; width: 100%; }
-    .field input:focus { border-color: var(--amber); }
+    .field input:focus { border-color: var(--green); }
     .field input::placeholder { color: var(--text-dim); }
-    .btn-auth { background: var(--amber); color: var(--bg); border: none; border-radius: 3px; padding: 10px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 4px; }
+    .btn-auth { background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 10px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 4px; }
     .btn-auth:hover { opacity: 0.85; }
     .btn-auth:disabled { opacity: 0.4; cursor: default; }
     .auth-erro { background: var(--red-bg); border: 1px solid var(--red); color: var(--red); border-radius: 3px; padding: 8px 10px; font-size: 11px; display: none; }
@@ -50,8 +50,22 @@
     .secao-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); }
     #painel-topo { display: flex; justify-content: space-between; align-items: center; }
     #contador { color: var(--text-dim); font-size: 11px; }
-    .btn-atualizar { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 11px; }
-    .btn-atualizar:hover { border-color: var(--amber); color: var(--amber); }
+    .btn-atualizar, .btn-nova-conta { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 11px; }
+    .btn-atualizar:hover { border-color: var(--green); color: var(--green); }
+    .btn-nova-conta { border-color: var(--green-border); color: var(--green); margin-right: 8px; }
+    .btn-nova-conta:hover { opacity: 0.8; }
+    #painel-topo-acoes { display: flex; }
+
+    #card-nova-conta { display: none; border: 1px solid var(--green-border); border-radius: 6px; background: var(--bg-alt); padding: 16px; flex-direction: column; gap: 12px; }
+    #card-nova-conta.aberta { display: flex; }
+    .nova-conta-linha { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nova-conta-linha .field-inline { flex: 1; min-width: 140px; }
+    .nova-conta-linha .field-inline input { width: 100%; border-color: var(--border); }
+    .nova-conta-acoes { display: flex; gap: 8px; align-items: center; }
+    .btn-criar-conta { background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 7px 14px; cursor: pointer; font-weight: 700; font-size: 11px; }
+    .btn-criar-conta:hover { opacity: 0.85; }
+    .btn-cancelar-conta { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 7px 14px; cursor: pointer; font-size: 11px; }
+    .nova-conta-erro { background: var(--red-bg); border: 1px solid var(--red); color: var(--red); border-radius: 3px; padding: 8px 10px; font-size: 11px; display: none; }
 
     #tabela { display: flex; flex-direction: column; gap: 6px; }
     .conta-row { border: 1px solid var(--border-dim); border-radius: 6px; background: var(--bg-alt); overflow: hidden; }
@@ -68,8 +82,8 @@
     .editar-saldo-row { display: flex; gap: 8px; align-items: flex-end; }
     .field-inline { display: flex; flex-direction: column; gap: 4px; }
     .field-inline label { font-size: 9px; letter-spacing: 1px; color: var(--text-dim); }
-    .field-inline input { background: var(--bg); border: 1px solid var(--amber-border); border-radius: 3px; padding: 6px 8px; color: var(--text-bright); outline: none; width: 130px; }
-    .btn-salvar-saldo { background: var(--amber); color: var(--bg); border: none; border-radius: 3px; padding: 7px 14px; cursor: pointer; font-weight: 700; font-size: 11px; }
+    .field-inline input { background: var(--bg); border: 1px solid var(--green-border); border-radius: 3px; padding: 6px 8px; color: var(--text-bright); outline: none; width: 130px; }
+    .btn-salvar-saldo { background: var(--green); color: var(--bg); border: none; border-radius: 3px; padding: 7px 14px; cursor: pointer; font-weight: 700; font-size: 11px; }
     .btn-salvar-saldo:hover { opacity: 0.85; }
     .btn-excluir { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 3px; padding: 7px 14px; cursor: pointer; font-size: 11px; margin-left: auto; }
     .btn-excluir:hover { border-color: var(--red); color: var(--red); }
@@ -128,8 +142,43 @@
         <div class="secao-label">CONTAS CADASTRADAS</div>
         <div id="contador"></div>
       </div>
-      <button class="btn-atualizar" onclick="carregarContas()">↻ Atualizar</button>
+      <div id="painel-topo-acoes">
+        <button class="btn-nova-conta" onclick="toggleNovaConta()">+ Nova conta</button>
+        <button class="btn-atualizar" onclick="carregarContas()">↻ Atualizar</button>
+      </div>
     </div>
+
+    <div id="card-nova-conta">
+      <div class="secao-label">CRIAR NOVA CONTA</div>
+      <div class="nova-conta-erro" id="nova-conta-erro"></div>
+      <form onsubmit="return submitNovaConta(event)">
+        <div class="nova-conta-linha">
+          <div class="field-inline">
+            <label>NOME</label>
+            <input id="nova-conta-nome" type="text" placeholder="Nome completo" required>
+          </div>
+          <div class="field-inline">
+            <label>E-MAIL</label>
+            <input id="nova-conta-email" type="email" placeholder="email@exemplo.com" required>
+          </div>
+        </div>
+        <div class="nova-conta-linha">
+          <div class="field-inline">
+            <label>SENHA</label>
+            <input id="nova-conta-senha" type="password" placeholder="mínimo 6 caracteres" required minlength="6">
+          </div>
+          <div class="field-inline">
+            <label>SALDO INICIAL (R$)</label>
+            <input id="nova-conta-saldo" type="text" placeholder="0.00">
+          </div>
+        </div>
+        <div class="nova-conta-acoes">
+          <button class="btn-criar-conta" type="submit" id="btn-criar-conta">Criar conta</button>
+          <button class="btn-cancelar-conta" type="button" onclick="toggleNovaConta(false)">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
     <div id="tabela"></div>
     <div id="terminal-output"></div>
   </main>
@@ -207,6 +256,52 @@
     document.getElementById('btn-sair').classList.remove('hidden');
     document.getElementById('painel').classList.remove('hidden');
     await carregarContas();
+  }
+
+  function toggleNovaConta(forcar) {
+    const card = document.getElementById('card-nova-conta');
+    const abrir = forcar !== undefined ? forcar : !card.classList.contains('aberta');
+    card.classList.toggle('aberta', abrir);
+    document.getElementById('nova-conta-erro').style.display = 'none';
+    if (abrir) {
+      document.getElementById('nova-conta-nome').focus();
+    } else {
+      document.getElementById('nova-conta-nome').value = '';
+      document.getElementById('nova-conta-email').value = '';
+      document.getElementById('nova-conta-senha').value = '';
+      document.getElementById('nova-conta-saldo').value = '';
+    }
+  }
+
+  function mostrarErroNovaConta(msg) {
+    const el = document.getElementById('nova-conta-erro');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function submitNovaConta(ev) {
+    ev.preventDefault();
+    document.getElementById('nova-conta-erro').style.display = 'none';
+    const body = {
+      name: document.getElementById('nova-conta-nome').value.trim(),
+      email: document.getElementById('nova-conta-email').value.trim(),
+      password: document.getElementById('nova-conta-senha').value,
+      balance: document.getElementById('nova-conta-saldo').value.trim() || '0',
+    };
+    const btn = document.getElementById('btn-criar-conta');
+    btn.disabled = true;
+    try {
+      const { status, data } = await api('POST', '/admin/accounts', body);
+      if (status === 201) {
+        toggleNovaConta(false);
+        await carregarContas();
+      } else {
+        mostrarErroNovaConta(data?.message || data?.erros?.join('\n') || 'Não foi possível criar a conta.');
+      }
+    } finally {
+      btn.disabled = false;
+    }
+    return false;
   }
 
   async function carregarContas() {

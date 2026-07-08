@@ -137,6 +137,7 @@ Todas as rotas autenticadas usam `Authorization: Bearer <token>`. O token é obt
 |--------|------------------------------------------|----------------------------------------------|
 | POST   | `/admin/login`                          | Autentica com as credenciais do `.env` e retorna token admin |
 | GET    | `/admin/accounts`                       | Lista todas as contas                        |
+| POST   | `/admin/accounts`                       | Cria uma nova conta (`name`, `email`, `password`, `balance?`) |
 | PATCH  | `/admin/accounts/{id}/balance`          | Ajusta o saldo de uma conta (`balance`)      |
 | DELETE | `/admin/accounts/{id}`                  | Exclui uma conta (`409` se houver saques)    |
 | GET    | `/admin/accounts/{id}/withdrawals`      | Histórico de saques de qualquer conta        |
