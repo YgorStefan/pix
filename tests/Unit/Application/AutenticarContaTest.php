@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 
 class AutenticarContaTest extends TestCase
 {
+    /** @var ContaRepositorio&Mockery\MockInterface */
     private ContaRepositorio $contaRepo;
     private AutenticarConta $useCase;
 
