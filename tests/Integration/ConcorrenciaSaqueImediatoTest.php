@@ -47,7 +47,8 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
 
     private PDO $pdo;
     private string $baseUrl;
-    private array $envServidorReal;
+    /** @var callable(string, string): string */
+    private $envServidorReal;
 
     protected function setUp(): void
     {
@@ -61,21 +62,30 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
         }
 
         // Este teste faz requests HTTP reais contra o servidor já em execução
-        // (subido via `docker compose up`, que sempre usa o `.env`). Por isso lê
-        // o `.env` diretamente, em vez de $_ENV/getenv(): quando rodado via
-        // `phpunit.integration.xml` (APP_ENV=testing), o bootstrap já carregou
-        // `.env.testing` nessas variáveis, o que apontaria para o banco
-        // `saque_pix_test` — diferente do banco que o servidor real utiliza —
-        // e faria toda conta criada aqui ser invisível para ele (404 em massa).
-        $this->envServidorReal = \Dotenv\Dotenv::createArrayBacked(dirname(__DIR__, 2), '.env')->safeLoad();
+        // (subido via `docker compose up`). Por isso lê a configuração via
+        // getenv() puro, do mesmo jeito que o próprio Hyperf resolve env() em
+        // produção (vendor/hyperf/support/src/Functions.php usa só getenv()).
+        // Não usamos $_ENV aqui: quando este teste roda via
+        // `phpunit.integration.xml` (APP_ENV=testing), o bootstrap carrega
+        // `.env.testing` com Dotenv::createMutable()->safeLoad(), que
+        // sobrescreve $_ENV mas NUNCA sobrescreve getenv() quando a variável
+        // já existe no ambiente do container (injetada pelo `env_file: .env`
+        // do docker-compose). Ler $_ENV aqui apontaria para o banco
+        // `saque_pix_test`, diferente do banco que o servidor real usa
+        // (`saque_pix`), fazendo toda conta criada aqui ser invisível para
+        // ele (404 em massa).
+        $this->envServidorReal = static function (string $key, string $default): string {
+            $valor = getenv($key);
+            return $valor !== false ? $valor : $default;
+        };
 
-        $this->baseUrl = rtrim($this->envServidorReal['APP_BASE_URL'] ?? 'http://localhost:9501', '/');
+        $this->baseUrl = rtrim(($this->envServidorReal)('APP_BASE_URL', 'http://localhost:9501'), '/');
 
-        $dbHost = $this->envServidorReal['DB_HOST'] ?? 'localhost';
-        $dbPort = $this->envServidorReal['DB_PORT'] ?? '3306';
-        $dbName = $this->envServidorReal['DB_DATABASE'] ?? 'saque_pix';
-        $dbUser = $this->envServidorReal['DB_USERNAME'] ?? 'app';
-        $dbPass = $this->envServidorReal['DB_PASSWORD'] ?? 'secret';
+        $dbHost = ($this->envServidorReal)('DB_HOST', 'localhost');
+        $dbPort = ($this->envServidorReal)('DB_PORT', '3306');
+        $dbName = ($this->envServidorReal)('DB_DATABASE', 'saque_pix');
+        $dbUser = ($this->envServidorReal)('DB_USERNAME', 'app');
+        $dbPass = ($this->envServidorReal)('DB_PASSWORD', 'secret');
 
         $this->pdo = new PDO(
             sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName),
@@ -149,11 +159,11 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
 
         // Reconectar ao MySQL: fork() compartilha o descritor da conexão e os
         // processos filho a fecham ao sair, invalidando a conexão do pai.
-        $dbHost = $this->envServidorReal['DB_HOST'] ?? 'localhost';
-        $dbPort = $this->envServidorReal['DB_PORT'] ?? '3306';
-        $dbName = $this->envServidorReal['DB_DATABASE'] ?? 'saque_pix';
-        $dbUser = $this->envServidorReal['DB_USERNAME'] ?? 'app';
-        $dbPass = $this->envServidorReal['DB_PASSWORD'] ?? 'secret';
+        $dbHost = ($this->envServidorReal)('DB_HOST', 'localhost');
+        $dbPort = ($this->envServidorReal)('DB_PORT', '3306');
+        $dbName = ($this->envServidorReal)('DB_DATABASE', 'saque_pix');
+        $dbUser = ($this->envServidorReal)('DB_USERNAME', 'app');
+        $dbPass = ($this->envServidorReal)('DB_PASSWORD', 'secret');
         $this->pdo = new PDO(
             sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName),
             $dbUser,
@@ -236,7 +246,7 @@ class ConcorrenciaSaqueImediatoTest extends TestCase
 
     private function tokenParaConta(string $contaId): string
     {
-        $chave = $this->envServidorReal['APP_KEY'] ?? '';
+        $chave = ($this->envServidorReal)('APP_KEY', '');
         $agora = time();
         return JWT::encode([
             'sub'  => $contaId,

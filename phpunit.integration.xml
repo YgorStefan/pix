@@ -10,6 +10,17 @@
     </testsuites>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!--
+            force="true" é necessário porque o Hyperf resolve env() via getenv()
+            puro (vendor/hyperf/support/src/Functions.php), que NUNCA é
+            sobrescrito pelo carregamento de .env.testing (Dotenv::createMutable
+            só sobrescreve $_ENV, não a variável de ambiente real do processo
+            quando ela já existe — e o docker-compose sempre injeta o .env real
+            no container via env_file). Sem o force, os testes de admin ficam
+            reféns de o .env real do desenvolvedor coincidir com este valor.
+        -->
+        <env name="ADMIN_EMAIL" value="admin@casepix.com" force="true"/>
+        <env name="ADMIN_PASSWORD_HASH" value="$2y$10$pvESDucqItnCZ2TzA2ZVkOjyb1QRG6AaX6.Gj0yq5YPh1bCC7z4KG" force="true"/>
         <ini name="memory_limit" value="512M"/>
     </php>
     <source>
